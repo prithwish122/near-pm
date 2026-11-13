@@ -472,3 +472,75 @@ mod tests {
         }
     }
 }
+
+/// Writes reference results for the TypeScript port (`packages/curve-math`) to check against.
+/// Run with `EBBFLOW_WRITE_FIXTURES=1 cargo test -p ebbflow export_fixtures`.
+#[cfg(test)]
+mod fixtures {
+    use super::*;
+    use near_sdk::serde_json::{json, Value};
+
+    struct Lcg(u64);
+    impl Lcg {
+        fn next(&mut self) -> u64 {
+            self.0 = self.0.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            self.0 >> 11
+        }
+        fn range(&mut self, lo: u128, hi: u128) -> u128 {
+            lo + (self.next() as u128 * self.next() as u128) % (hi - lo + 1)
+        }
+    }
+
+    fn result(r: Result<Fill, CurveError>) -> Value {
+        match r {
+            Ok(f) => json!({ "quote": f.quote.to_string(), "new_price": f.new_price.to_string() }),
+            Err(e) => json!({ "error": format!("{e:?}") }),
+        }
+    }
+
+    fn side_json(s: &Side) -> Value {
+        near_sdk::serde_json::to_value(s).unwrap()
+    }
+
+    #[test]
+    fn export_fixtures() {
+        if std::env::var("EBBFLOW_WRITE_FIXTURES").is_err() {
+            return;
+        }
+        let mut rng = Lcg(42);
+        let unit = 10u128.pow(24);
+        let usdc = 1_000_000u128;
+        let mut cases = vec![];
+        for i in 0..400 {
+            let alpha = (i % 4) as u8;
+            let p0 = rng.range(1, 100_000) * usdc / 100 * PRICE_SCALE;
+            let flat = i % 7 == 0;
+            if i % 2 == 0 {
+                let span = if flat { 0 } else { rng.range(0, 100_000) * usdc / 100 * PRICE_SCALE };
+                let s = Side::new(rng.range(1, 1_000_000) * unit, p0, p0 + span, alpha);
+                let base = match i % 5 {
+                    0 => s.remaining,
+                    1 => s.remaining + 1,
+                    2 => 1,
+                    _ => rng.range(1, s.remaining),
+                };
+                cases.push(json!({ "kind": "ask", "side": side_json(&s), "base_unit": unit.to_string(),
+                    "base": base.to_string(), "result": result(ask_fill(&s, unit, base)) }));
+            } else {
+                let p_e = if flat { p0 } else { (p0 / 100 * rng.range(1, 100)).max(1) };
+                let s = Side::new(rng.range(1, 1_000_000_000) * usdc, p0, p_e, alpha);
+                let cap = bid_capacity(&s, unit).unwrap();
+                let base = match i % 5 {
+                    1 => cap,
+                    3 => cap + 1,
+                    _ => rng.range(1, cap.max(1)),
+                };
+                cases.push(json!({ "kind": "bid", "side": side_json(&s), "base_unit": unit.to_string(),
+                    "base": base.to_string(), "capacity": cap.to_string(), "result": result(bid_fill(&s, unit, base)) }));
+            }
+        }
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../packages/curve-math/fixtures/curve.json");
+        std::fs::create_dir_all(std::path::Path::new(path).parent().unwrap()).unwrap();
+        std::fs::write(path, near_sdk::serde_json::to_string_pretty(&cases).unwrap()).unwrap();
+    }
+}
