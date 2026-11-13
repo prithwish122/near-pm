@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ArrowDownUp } from "lucide-react";
 import { ASK_CAPACITY, BEST_ASK, BEST_BID, BID_CAPACITY, baseForQuote, route, totals } from "@/lib/curve";
 
@@ -118,6 +119,7 @@ export default function SwapCard() {
         Execute (1 tx)
       </button>
       {msg && <p role="status" className={`mt-3 text-center text-[11px] ${msg.ok ? "text-emerald-300" : "text-rose-300"}`}>{msg.text}</p>}
+      <Link href="/trade" className="mt-3 block text-center text-[12px] text-mint underline underline-offset-2 hover:text-white">Trade on testnet with real quotes →</Link>
     </div>
   );
 }

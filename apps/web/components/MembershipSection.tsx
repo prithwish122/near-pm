@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ShieldCheck, Undo2 } from "lucide-react";
 import Reveal from "./Reveal";
 import WorldMap from "./WorldMap";
@@ -44,7 +45,7 @@ export default function MembershipSection() {
           <div className="member-glow relative flex h-full min-h-[420px] flex-col items-center overflow-hidden rounded-[22px] border border-white/10 px-6 pt-12 text-center lg:min-h-[500px]">
             <h3 className="text-[26px] font-normal leading-[1.2] text-white sm:text-[30px]">Publish a curve.<br />Earn the spread<br />without a bot</h3>
             <p className="mt-4 max-w-[240px] text-[11px] leading-relaxed text-white/60">Set your range and shape once. Withdraw or close any time, and only you can move your funds.</p>
-            <a href="#buy" className="mt-6 rounded-lg border border-white/25 bg-black/50 px-6 py-2 text-xs text-white transition hover:border-white/60 hover:bg-black/70">Start making</a>
+            <Link href="/make" className="mt-6 rounded-lg border border-white/25 bg-black/50 px-6 py-2 text-xs text-white transition hover:border-white/60 hover:bg-black/70">Start making</Link>
           </div>
         </Reveal>
         <div className="grid gap-4 lg:grid-rows-2 lg:gap-5">

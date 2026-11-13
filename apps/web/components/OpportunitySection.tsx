@@ -3,12 +3,12 @@ import FeatureCard from "./FeatureCard";
 import Reveal from "./Reveal";
 
 const cards = [
-  { icon: Spline, title: "Curve pricing", text: "Pick a range and a shape. The more a taker takes, the further along the curve they move, so makers are never emptied at one price." },
-  { icon: Split, title: "Multi-maker routing", text: "A solver splits your trade across up to 8 makers for the best total price." },
-  { icon: Repeat2, title: "Inventory recycling", text: "What a maker earns refills the other side of the curve without moving its price. No bot, no extra transaction." },
-  { icon: ShieldCheck, title: "Atomic settlement", text: "One ft_transfer_call. Every leg fills in a single receipt, or you are refunded in full.", highlight: true },
-  { icon: Target, title: "Limit orders built in", text: "Set start price equal to end price and the curve collapses to a single price. Same code path." },
-  { icon: Bot, title: "Agent economy", text: "MCP tools let AI agents quote, simulate and trade from a budget-capped sub-account." },
+  { icon: Spline, title: "Curve pricing", href: "/make", text: "Pick a range and a shape. The more a taker takes, the further along the curve they move, so makers are never emptied at one price." },
+  { icon: Split, title: "Multi-maker routing", href: "/trade", text: "A solver splits your trade across up to 8 makers for the best total price." },
+  { icon: Repeat2, title: "Inventory recycling", href: "/activity", text: "What a maker earns refills the other side of the curve without moving its price. No bot, no extra transaction." },
+  { icon: ShieldCheck, title: "Atomic settlement", href: "/articles/atomic-fills-on-near", text: "One ft_transfer_call. Every leg fills in a single receipt, or you are refunded in full.", highlight: true },
+  { icon: Target, title: "Limit orders built in", href: "/make", text: "Set start price equal to end price and the curve collapses to a single price. Same code path." },
+  { icon: Bot, title: "Agent economy", href: "/articles/trading-with-agents-over-mcp", text: "MCP tools let AI agents quote, simulate and trade from a budget-capped sub-account." },
 ];
 
 export default function OpportunitySection() {
