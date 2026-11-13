@@ -1,0 +1,6 @@
+{
+  "network": "testnet",
+  "book": "book.ebbflow-team.testnet",
+  "markets": [{ "market_id": 0, "base": "wrap.testnet", "quote": "usdc.ebbflow-team.testnet", "base_decimals": 24, "quote_decimals": 6 }],
+  "owner": "ebbflow-team.testnet"
+}
