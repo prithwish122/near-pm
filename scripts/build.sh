@@ -7,7 +7,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-export RUSTFLAGS="-C target-cpu=mvp -C target-feature=+mutable-globals -C link-arg=-s"
+# `--cfg near` makes near-sdk use host functions (e.g. panic_utf8, so error messages
+# reach the caller); cargo-near sets it, plain cargo does not.
+export RUSTFLAGS="--cfg near -C target-cpu=mvp -C target-feature=+mutable-globals -C link-arg=-s"
 export CFLAGS_wasm32_unknown_unknown="-mno-bulk-memory -mno-bulk-memory-opt"
 
 cargo +nightly build \
