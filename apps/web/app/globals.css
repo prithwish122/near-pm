@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html { scroll-behavior: smooth; }
+body { background: #07110a; color: #f7fffa; font-family: var(--font-jakarta), Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+@layer components {
+  .wrap { @apply mx-auto w-full max-w-wrap px-5 sm:px-8 lg:px-12; }
+  .pill { @apply inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium tracking-wide; }
+  .glass { background: linear-gradient(160deg, rgba(40,120,80,.38), rgba(14,40,25,.55)); border: 1px solid rgba(140,255,189,.16); backdrop-filter: blur(14px); }
+  .card-hover { transition: transform .35s ease, border-color .35s ease, background .35s ease, box-shadow .35s ease; }
+  .card-hover:hover { transform: translateY(-4px); border-color: rgba(125,255,183,.5); box-shadow: 0 18px 50px -20px rgba(70,255,156,.55); }
+}
+
+/* Hero: black -> violet glow -> near-white */
+.hero-bg {
+  background:
+    radial-gradient(ellipse 70% 30% at 22% 72%, rgba(30,190,110,.7) 0%, rgba(30,190,110,0) 70%),
+    radial-gradient(ellipse 60% 24% at 70% 74%, rgba(45,205,125,.55) 0%, rgba(45,205,125,0) 70%),
+    linear-gradient(180deg, #060f09 0%, #08180e 42%, #0f3d25 58%, #138a50 68%, #3fd68c 77%, #bff5da 84%, #f4fffa 89%, #fff 93%);
+}
+/* Opportunity: white -> lavender -> deep violet -> black */
+.opp-bg {
+  background:
+    radial-gradient(ellipse 55% 22% at 50% 42%, rgba(95,255,170,.5) 0%, rgba(95,255,170,0) 70%),
+    linear-gradient(180deg, #fff 0%, #f3fff9 22%, #bfffdd 34%, #4cf097 43%, #167041 53%, #092013 64%, #07110a 76%);
+}
+.news-bg {
+  background:
+    radial-gradient(ellipse 60% 34% at 50% 78%, rgba(85,255,163,.9) 0%, rgba(85,255,163,0) 70%),
+    linear-gradient(180deg, #07110a 0%, #08190f 40%, #10482b 62%, #3ad882 78%, #a4ffce 90%, #fff 100%);
+}
+.member-glow {
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 100%, rgba(162,255,208,.95) 0%, rgba(85,255,176,.85) 30%, rgba(45,190,116,.45) 60%, rgba(0,0,0,0) 80%),
+    linear-gradient(180deg, #0a1c12 0%, #0d331d 55%, #12522d 100%);
+}
+@keyframes drift { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(2%,-1.5%,0) scale(1.05); } }
+.drift { animation: drift 14s ease-in-out infinite; }
+@keyframes ping-slow { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(3); opacity: 0; } }
+.ping-slow { transform-origin: center; transform-box: fill-box; animation: ping-slow 2.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .drift, .ping-slow { animation: none; } html { scroll-behavior: auto; } }
+
