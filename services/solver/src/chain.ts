@@ -49,6 +49,16 @@ export class NearRpc {
     return JSON.parse(Buffer.from(result.result).toString("utf8")) as T;
   }
 
+  /** Native NEAR balance in yoctoNEAR. */
+  async nearBalance(accountId: string): Promise<bigint> {
+    const r = await this.request<{ amount: string }>("query", {
+      request_type: "view_account",
+      finality: "optimistic",
+      account_id: accountId,
+    });
+    return BigInt(r.amount);
+  }
+
   async blockHeight(): Promise<number> {
     const block = await this.request<{ header: { height: number } }>("block", { finality: "final" });
     return block.header.height;
@@ -63,7 +73,7 @@ export class NearBookSource implements BookSource {
   private positions = new Map<number, { at: number; value: Promise<PositionView[]> }>();
 
   constructor(
-    private readonly rpc: NearRpc,
+    readonly rpc: NearRpc,
     readonly contractId: string,
     readonly network: string,
     private readonly cacheTtlMs = 2_000,

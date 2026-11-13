@@ -1,42 +1,15 @@
-import { CurveError, parseUnits } from "@ebbflow/curve-math";
+import { CurveError } from "@ebbflow/curve-math";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { z } from "zod";
 import { RpcError } from "./chain.js";
 import { curves, summary } from "./curves.js";
-import { buildQuote, MAX_SLIPPAGE_BPS } from "./quote.js";
-import { RouteError, routeBuyWithQuote, routeExactBase } from "./router.js";
-import type { BookSource, Market } from "./types.js";
+import { RouteError } from "./router.js";
+import { findMarket, getQuote, HttpError, QuoteRequest } from "./service.js";
+import type { BookSource } from "./types.js";
 
-const amount = z.string().regex(/^\d+(\.\d+)?$/, "decimal string");
 const rawAmount = z.string().regex(/^\d+$/, "integer string");
 const account = z.string().min(2).max(64);
-
-export const QuoteRequest = z
-  .object({
-    market_id: z.number().int().nonnegative(),
-    side: z.enum(["buy_base", "sell_base"]),
-    /** Exact base size, human units ("200"). */
-    base_amount: amount.optional(),
-    base_amount_raw: rawAmount.optional(),
-    /** Buy only: spend at most this much quote. */
-    quote_amount: amount.optional(),
-    quote_amount_raw: rawAmount.optional(),
-    slippage_bps: z.number().int().min(0).max(MAX_SLIPPAGE_BPS).default(50),
-    taker: account.optional(),
-    recipient: account.optional(),
-    /** Skip the taker's own positions. */
-    exclude_own: z.boolean().default(true),
-  })
-  .refine(
-    (q) => [q.base_amount, q.base_amount_raw, q.quote_amount, q.quote_amount_raw].filter((v) => v !== undefined).length === 1,
-    "provide exactly one of base_amount, base_amount_raw, quote_amount, quote_amount_raw",
-  )
-  .refine(
-    (q) => q.side === "buy_base" || (q.quote_amount === undefined && q.quote_amount_raw === undefined),
-    "quote_amount is only supported for buy_base",
-  );
-export type QuoteRequest = z.infer<typeof QuoteRequest>;
 
 const SimulateRequest = z.object({
   msg: z.object({
@@ -48,23 +21,6 @@ const SimulateRequest = z.object({
   }),
   amount: rawAmount,
 });
-
-class HttpError extends Error {
-  constructor(
-    public readonly status: 400 | 404 | 422 | 502,
-    public readonly code: string,
-    message: string,
-    public readonly extra: Record<string, unknown> = {},
-  ) {
-    super(message);
-  }
-}
-
-async function findMarket(source: BookSource, id: number): Promise<Market> {
-  const m = (await source.getMarkets()).find((x) => x.market_id === id);
-  if (!m) throw new HttpError(404, "MARKET_NOT_FOUND", `market ${id} not found`);
-  return m;
-}
 
 async function body<T>(c: Context, schema: z.ZodType<T, z.ZodTypeDef, unknown>): Promise<T> {
   let json: unknown;
@@ -130,42 +86,7 @@ export function createApp(source: BookSource) {
     return c.json(curves(await source.getPositions(m.market_id), m, points));
   });
 
-  app.post("/quote", async (c) => {
-    const q = await body(c, QuoteRequest);
-    const market = await findMarket(source, q.market_id);
-    const positions = await source.getPositions(market.market_id);
-    const opts = { excludeOwner: q.exclude_own ? q.taker : undefined };
-
-    let route;
-    try {
-      if (q.quote_amount !== undefined || q.quote_amount_raw !== undefined) {
-        const budget = q.quote_amount_raw !== undefined ? BigInt(q.quote_amount_raw) : parseUnits(q.quote_amount!, market.quote_decimals);
-        route = routeBuyWithQuote(positions, market, budget, opts);
-      } else {
-        const size = q.base_amount_raw !== undefined ? BigInt(q.base_amount_raw) : parseUnits(q.base_amount!, market.base_decimals);
-        route = routeExactBase(positions, market, q.side, size, opts);
-      }
-    } catch (e) {
-      if (e instanceof Error && e.message.startsWith("too many decimals")) {
-        throw new HttpError(400, "INVALID_REQUEST", e.message);
-      }
-      throw e;
-    }
-
-    const quote = buildQuote(route, market, source.contractId, q.slippage_bps, q.recipient);
-    const receiver = q.recipient ?? q.taker;
-    if (receiver) {
-      const outputToken = q.side === "buy_base" ? market.base : market.quote;
-      try {
-        if (!(await source.isRegistered(outputToken, receiver))) {
-          quote.warnings.push("recipient_not_registered_with_output_token");
-        }
-      } catch {
-        quote.warnings.push("registration_check_failed");
-      }
-    }
-    return c.json(quote);
-  });
+  app.post("/quote", async (c) => c.json(await getQuote(source, await body(c, QuoteRequest))));
 
   app.post("/simulate", async (c) => {
     const r = await body(c, SimulateRequest);

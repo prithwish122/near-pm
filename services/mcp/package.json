@@ -1,0 +1,24 @@
+{
+  "name": "@ebbflow/mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "ebbflow-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "demo": "tsx scripts/agent-demo.ts"
+  },
+  "dependencies": {
+    "@ebbflow/curve-math": "workspace:*",
+    "@ebbflow/solver": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.0",
+    "near-api-js": "^7.5.0",
+    "zod": "^3.23.0"
+  }
+}
