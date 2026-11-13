@@ -7,7 +7,7 @@
  * (limit orders). Float maths is only used to *allocate*; every leg is then priced with
  * the exact integer port of the contract maths, so quotes match settlement.
  */
-import { askFill, bidCapacity, bidFill, CurveError, sideFromJson, type Side } from "@ebbflow/curve-math";
+import { askFill, bidCapacity, bidFill, CurveError, sideFromJson, value, type Side } from "@ebbflow/curve-math";
 import type { Market, PositionView, SwapSide } from "./types.js";
 
 export const MAX_LEGS = 8;
@@ -72,7 +72,10 @@ export function candidates(
     if (!raw) continue;
     const s = sideFromJson(raw);
     const capacity = side === "buy_base" ? s.remaining : bidCapacity(s, unit);
-    if (capacity > 0n) out.push({ position_id: p.position_id, owner_id: p.owner_id, side: s, capacity });
+    // Skip dust: a side whose whole capacity is worth less than one atomic quote unit.
+    if (capacity > 0n && value(capacity, s.current_price, unit, false) > 0n) {
+      out.push({ position_id: p.position_id, owner_id: p.owner_id, side: s, capacity });
+    }
   }
   // Asks: cheapest first. Bids: highest first.
   out.sort((a, b) => {
@@ -83,20 +86,33 @@ export function candidates(
   return out;
 }
 
-/** Base a side supplies (as a float) if its marginal price may move up (ask) / down (bid) to `p`. */
-function supplyAt(side: SwapSide, c: Candidate, p: number): number {
+/** Fraction of its capacity a side supplies if its marginal price may move up (ask) / down (bid) to `p`. */
+function fractionAt(side: SwapSide, c: Candidate, p: number): number {
   const pc = Number(c.side.current_price);
   const pe = Number(c.side.end_price);
-  const cap = Number(c.capacity);
   const k = c.side.alpha + 1;
   if (side === "buy_base") {
     if (p < pc) return 0;
-    if (pe === pc) return cap;
-    return Math.min(1, ((p - pc) / (pe - pc)) ** (1 / k)) * cap;
+    if (pe === pc) return 1;
+    return Math.min(1, ((p - pc) / (pe - pc)) ** (1 / k));
   }
   if (p > pc) return 0;
-  if (pe === pc) return cap;
-  return Math.min(1, ((pc - p) / (pc - pe)) ** (1 / k)) * cap;
+  if (pe === pc) return 1;
+  return Math.min(1, ((pc - p) / (pc - pe)) ** (1 / k));
+}
+
+/** Base a side supplies at `p`, as a float (for searching). */
+function supplyAt(side: SwapSide, c: Candidate, p: number): number {
+  return fractionAt(side, c, p) * Number(c.capacity);
+}
+
+/**
+ * Base a side supplies at `p`, in exact units. A fully consumed side gets its exact
+ * capacity: going through a float would drop low bits and strand dust in the position.
+ */
+function allocAt(side: SwapSide, c: Candidate, p: number): bigint {
+  const f = fractionAt(side, c, p);
+  return f >= 1 ? c.capacity : floorBig(f * Number(c.capacity), c.capacity);
 }
 
 function floorBig(x: number, max: bigint): bigint {
@@ -133,7 +149,7 @@ export function allocate(side: SwapSide, cs: Candidate[], size: bigint): bigint[
     else under = mid;
   }
 
-  const alloc = cs.map((c) => floorBig(supplyAt(side, c, under), c.capacity));
+  const alloc = cs.map((c) => allocAt(side, c, under));
   let rem = size - sum(alloc);
   if (rem < 0n) {
     // Float noise overshot: trim from the worst-priced legs.

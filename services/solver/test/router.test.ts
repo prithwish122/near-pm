@@ -75,6 +75,21 @@ describe("routing", () => {
     expect(() => routeExactBase(book, MARKET, "buy_base", B("85"))).toThrow(/more than 8/);
   });
 
+  it("fills a limit order exactly, leaving no dust", () => {
+    // Regression: float allocation used to strand 2^24 atomic units in fully used limit orders.
+    const book = prdBook();
+    const r = routeExactBase(book, MARKET, "buy_base", B("250"));
+    const arjun = r.legs.find((l) => l.owner_id === "arjun.testnet")!;
+    expect(arjun.base).toBe(B("100"));
+    expect(r.base_total).toBe(B("250"));
+  });
+
+  it("ignores dust positions", () => {
+    const book = [...prdBook(), position("dust.testnet", newSide(16_777_216n, P("5.00"), P("5.00"), 0))];
+    const r = routeExactBase(book, MARKET, "buy_base", B("1"));
+    expect(r.legs.map((l) => l.owner_id)).toEqual(["priya.testnet"]);
+  });
+
   it("spends at most a quote budget (exact-in)", () => {
     const r = routeBuyWithQuote(prdBook(), MARKET, Q("1010.12"));
     expect(r.quote_total <= Q("1010.12")).toBe(true);
