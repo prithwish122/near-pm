@@ -563,7 +563,7 @@ Format: `EVENT_JSON:{"standard":"ebbflow","version":"1.0.0","event":"<name>","da
 | Position (+ indexes) | ~400 | Maker via attached deposit on `create_position`; refunded on close |
 | Ring buffer | fixed 100 × ~200 | Contract (pre-funded) |
 
-Storage cost is measured with `env::storage_usage()` before/after and charged at `env::storage_byte_cost()`; excess attached NEAR is refunded.
+Implementation: a flat 0.01 NEAR per position (well above its ~400 bytes) is charged on create and refunded on close, plus a one-off 0.01 NEAR NEP-145 registration per account. Excess attached NEAR is refunded.
 
 ### 9.8 Token registration prerequisites
 
