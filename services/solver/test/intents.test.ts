@@ -198,7 +198,7 @@ describe("1Click proxy endpoints", () => {
   it("lists tokens and reports whether quoting is enabled", async () => {
     const calls: { url: string; init?: RequestInit }[] = [];
     const a = createApp(new MemorySource(prdBook()), new OneClick("key", "https://oc.test", fake(calls)));
-    expect(await (await a.request("/intents/tokens")).json()).toMatchObject({ enabled: true, tokens: [{ symbol: "wNEAR" }] });
+    expect(await (await a.request("/intents/tokens")).json()).toMatchObject({ enabled: true, dry_quotes: true, tokens: [{ symbol: "wNEAR" }] });
   });
 
   it("sends the exact-input request with the server-side api key", async () => {
@@ -211,11 +211,22 @@ describe("1Click proxy endpoints", () => {
     expect(JSON.parse(sent.init!.body as string)).toMatchObject({ dry: true, swapType: "EXACT_INPUT", originAsset: body.origin_asset, destinationAsset: body.destination_asset, amount: "1000000", recipient: "me.near", refundTo: "0xabc" });
   });
 
+  it("serves dry quotes without a key, but needs one for a deposit address or status", async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const nokey = createApp(new MemorySource(prdBook()), new OneClick(undefined, "https://oc.test", fake(calls)));
+    const post = (b: object) => nokey.request("/intents/swap-quote", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) });
+    expect((await post(body)).status).toBe(200);
+    expect(((calls.find((c) => c.url.endsWith("/v0/quote"))!.init!.headers ?? {}) as Record<string, string>)["x-api-key"]).toBeUndefined();
+    expect((await post({ ...body, dry: false })).status).toBe(503);
+    expect((await nokey.request("/intents/status?deposit_address=abc")).status).toBe(503);
+    expect(await (await nokey.request("/intents/tokens")).json()).toMatchObject({ enabled: false, dry_quotes: true });
+  });
+
   it("returns 503 when no api key is configured and 502 on upstream errors", async () => {
     const calls: { url: string; init?: RequestInit }[] = [];
     const nokey = createApp(new MemorySource(prdBook()), new OneClick(undefined, "https://oc.test", fake(calls)));
-    const post = (a: ReturnType<typeof createApp>) => a.request("/intents/swap-quote", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-    expect((await post(nokey)).status).toBe(503);
+    const post = (a: ReturnType<typeof createApp>, b: object = body) => a.request("/intents/swap-quote", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) });
+    expect((await post(nokey, { ...body, dry: false })).status).toBe(503);
     const bad = createApp(new MemorySource(prdBook()), new OneClick("k", "https://oc.test", (async () => new Response("denied", { status: 401 })) as unknown as typeof fetch));
     expect((await post(bad)).status).toBe(502);
   });

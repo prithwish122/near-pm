@@ -44,7 +44,7 @@ export default function FundPage() {
       <PageHead title="Fund" sub="Pay from any chain with NEAR Intents and receive wNEAR or USDC on NEAR, ready to trade on the book." />
       {!IS_MAINNET && <div className="mb-5"><Notice tone="info" title="Mainnet only">NEAR Intents runs on NEAR mainnet and has no testnet. Use a mainnet NEAR account as the recipient. This page cannot fund the testnet deployment{accountId ? ` (connected: ${accountId})` : ""}. Start the app with NEXT_PUBLIC_NEAR_NETWORK=mainnet to use it.</Notice></div>}
       {tokens.error && <div className="mb-5"><Notice tone="error" title="Cannot load assets">{String(tokens.error instanceof Error ? tokens.error.message : tokens.error)}</Notice></div>}
-      {tokens.data && !tokens.data.enabled && <div className="mb-5"><Notice tone="warn" title="Quotes are disabled">The solver has no INTENTS_API_KEY, so you can browse assets but not request quotes.</Notice></div>}
+      {tokens.data && !tokens.data.enabled && <div className="mb-5"><Notice tone="info" title="Quote-only mode">The solver has no INTENTS_API_KEY, so you can get quotes but not a deposit address.</Notice></div>}
       {err && <div className="mb-5"><Notice tone="error" title="Quote failed">{err}</Notice></div>}
 
       <div className="grid gap-5 lg:grid-cols-2">
@@ -72,7 +72,7 @@ export default function FundPage() {
           <Field className="mt-4" label="Recipient (mainnet NEAR account)" value={recipient} onChange={(e) => setRecipient(e.target.value.trim())} placeholder={IS_MAINNET && accountId ? accountId : "you.near"} />
           <Field className="mt-4" label={`Refund address${origin ? ` on ${origin.blockchain}` : ""}`} value={refundTo} onChange={(e) => setRefundTo(e.target.value.trim())} hint="Where the funds go back if the swap fails." />
           <div className="mt-4 flex gap-2">
-            <Btn className="flex-1" disabled={!canQuote || !tokens.data?.enabled} onClick={() => run(true)}>{busy ? "Quoting…" : "Get quote"}</Btn>
+            <Btn className="flex-1" disabled={!canQuote} onClick={() => run(true)}>{busy ? "Quoting…" : "Get quote"}</Btn>
             <Btn variant="ghost" className="flex-1" disabled={!canQuote || !tokens.data?.enabled} onClick={() => run(false)}>Get deposit address</Btn>
           </div>
         </Card>

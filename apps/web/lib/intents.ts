@@ -3,7 +3,8 @@ import { call } from "./api";
 import { parseAmount } from "./format";
 
 export interface IntentsToken { assetId: string; symbol: string; blockchain: string; decimals: number; price?: string | number }
-export interface IntentsTokens { enabled: boolean; tokens: IntentsToken[] }
+/** `enabled`: the solver has an API key (deposit addresses, status). Dry quotes always work. */
+export interface IntentsTokens { enabled: boolean; dry_quotes?: boolean; tokens: IntentsToken[] }
 
 /** What a swap can deliver: the tokens the Ebbflow book trades on mainnet. */
 export const DESTINATIONS = [
@@ -31,11 +32,18 @@ export interface FundQuoteResponse {
 }
 
 /** One-line summary of a 1Click quote for display. */
+/** Limits a decimal string to `max` fraction digits, dropping trailing zeros. */
+export function trimDecimals(v: string, max = 6): string {
+  const [i, f = ""] = v.split(".");
+  const t = f.slice(0, max).replace(/0+$/, "");
+  return t ? `${i}.${t}` : i!;
+}
+
 export function summarizeFundQuote(r: FundQuoteResponse, originSymbol: string, destSymbol: string): string | null {
   const q = r.quote;
   if (!q?.amountInFormatted || !q.amountOutFormatted) return null;
   const eta = q.timeEstimate ? ` in about ${Math.max(1, Math.round(q.timeEstimate / 60))} min` : "";
-  return `Pay ${q.amountInFormatted} ${originSymbol}, receive about ${q.amountOutFormatted} ${destSymbol}${eta}.`;
+  return `Pay ${trimDecimals(q.amountInFormatted)} ${originSymbol}, receive about ${trimDecimals(q.amountOutFormatted)} ${destSymbol}${eta}.`;
 }
 
 /** Tokens matching a search box, with NEAR-native assets pushed to the end (they need no bridging). */

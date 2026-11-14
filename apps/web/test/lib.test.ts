@@ -152,7 +152,7 @@ describe("curve preview reproduces the PRD worked example (§7.8)", () => {
   });
 });
 
-import { DESTINATIONS, filterTokens, summarizeFundQuote } from "../lib/intents";
+import { DESTINATIONS, filterTokens, summarizeFundQuote, trimDecimals } from "../lib/intents";
 
 describe("intents funding helpers", () => {
   const tokens = [
@@ -168,6 +168,12 @@ describe("intents funding helpers", () => {
   it("summarises a quote, or returns null when fields are missing", () => {
     expect(summarizeFundQuote({ quote: { amountInFormatted: "10", amountOutFormatted: "4.1", timeEstimate: 120 } }, "USDC", "wNEAR")).toBe("Pay 10 USDC, receive about 4.1 wNEAR in about 2 min.");
     expect(summarizeFundQuote({}, "USDC", "wNEAR")).toBeNull();
+  });
+  it("trims long decimals in quote summaries", () => {
+    expect(trimDecimals("30.944439523852116902904543")).toBe("30.944439");
+    expect(trimDecimals("100.0")).toBe("100");
+    expect(trimDecimals("99.988876")).toBe("99.988876");
+    expect(summarizeFundQuote({ quote: { amountInFormatted: "100.0", amountOutFormatted: "30.944439523852116902904543", timeEstimate: 60 } }, "USDC", "wNEAR")).toBe("Pay 100 USDC, receive about 30.944439 wNEAR in about 1 min.");
   });
   it("offers wNEAR and USDC on NEAR", () => {
     expect(DESTINATIONS.map((d) => d.assetId)).toContain("nep141:wrap.near");

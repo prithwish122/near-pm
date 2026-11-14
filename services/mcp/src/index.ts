@@ -21,7 +21,7 @@ const config = loadConfig();
 const rpc = new NearRpc(config.rpcUrls);
 const source = new NearBookSource(rpc, config.contractId, config.network, 2_000);
 const wallet = config.agent ? new NearWallet(config.agent.accountId, config.agent.privateKey, config.rpcUrls[0]!) : undefined;
-const tools = new EbbflowTools({ source, chain: rpc, wallet, budget: new Budget(config.limits), config, oneClick: process.env.INTENTS_API_KEY ? new OneClick(process.env.INTENTS_API_KEY) : undefined });
+const tools = new EbbflowTools({ source, chain: rpc, wallet, budget: new Budget(config.limits), config, oneClick: new OneClick(process.env.INTENTS_API_KEY) });
 
 const who = wallet ? `agent ${wallet.accountId}` : "read-only (no AGENT_ACCOUNT_ID)";
 console.error(`ebbflow mcp → ${config.contractId} (${config.network}), ${who}`);

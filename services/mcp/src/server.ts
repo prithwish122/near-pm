@@ -136,7 +136,7 @@ export function createServer(tools: EbbflowTools): McpServer {
       title: "NEAR Intents tokens",
       description:
         "Assets on other chains that NEAR Intents can swap into this agent's NEAR account (mainnet only). Use the assetId " +
-        "values with intents_fund_quote. Needs INTENTS_API_KEY on the server.",
+        "values with intents_fund_quote. Public data, no key needed.",
       inputSchema: {
         query: z.string().optional().describe('Filter by symbol, chain or asset id, e.g. "usdc" or "eth"'),
         limit: z.number().int().min(1).max(100).default(25),

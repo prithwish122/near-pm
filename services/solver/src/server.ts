@@ -98,7 +98,7 @@ export function createApp(source: BookSource, oneClick: OneClick = new OneClick(
   });
 
   // NEAR Intents (1Click): fund an Ebbflow trade from any chain. Mainnet only; the API key stays here.
-  app.get("/intents/tokens", async (c) => c.json({ enabled: oneClick.canQuote, tokens: await oneClick.getTokens() }));
+  app.get("/intents/tokens", async (c) => c.json({ enabled: oneClick.hasKey, dry_quotes: true, tokens: await oneClick.getTokens() }));
 
   app.post("/intents/swap-quote", async (c) => {
     const r = await body(

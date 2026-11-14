@@ -42,7 +42,8 @@ export class OneClick {
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
-  get canQuote(): boolean {
+  /** Dry quotes work without a key (verified live); deposit addresses and status need one. */
+  get hasKey(): boolean {
     return Boolean(this.apiKey);
   }
 
@@ -66,11 +67,12 @@ export class OneClick {
   }
 
   async quote(i: SwapQuoteInput): Promise<unknown> {
-    if (!this.apiKey) throw new OneClickError(503, "INTENTS_API_KEY is not configured");
+    const dry = i.dry ?? true;
+    if (!dry && !this.apiKey) throw new OneClickError(503, "INTENTS_API_KEY is required to get a deposit address");
     return this.call("/v0/quote", {
       method: "POST",
       body: JSON.stringify({
-        dry: i.dry ?? true,
+        dry,
         swapType: "EXACT_INPUT",
         slippageTolerance: i.slippageBps ?? 100,
         originAsset: i.originAsset,
@@ -87,6 +89,7 @@ export class OneClick {
   }
 
   async status(depositAddress: string): Promise<unknown> {
+    if (!this.apiKey) throw new OneClickError(503, "INTENTS_API_KEY is required to check swap status");
     return this.call(`/v0/status?depositAddress=${encodeURIComponent(depositAddress)}`);
   }
 }

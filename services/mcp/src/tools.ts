@@ -68,7 +68,7 @@ export class EbbflowTools {
   }
 
   private get oneClick(): OneClick {
-    if (!this.d.oneClick) throw new ToolError("NEAR Intents is not configured (set INTENTS_API_KEY; mainnet only)");
+    if (!this.d.oneClick) throw new ToolError("NEAR Intents is not configured on this server");
     return this.d.oneClick;
   }
 
