@@ -5,3 +5,5 @@ node_modules/
 !res/*.wasm
 dist/
 *.tsbuildinfo
+.vercel
+.env*.local
