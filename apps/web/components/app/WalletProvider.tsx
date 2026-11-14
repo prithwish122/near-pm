@@ -40,6 +40,9 @@ export default function WalletProvider({ children }: { children: ReactNode }) {
   const modalRef = useRef<WalletSelectorModal | null>(null);
   const actionsRef = useRef<typeof import("@near-wallet-selector/core").actionCreators | null>(null);
 
+  const startRef = useRef<() => void>(() => {});
+  const openWhenReady = useRef(false);
+
   useEffect(() => {
     if (!HAS_TEST_WALLET) return;
     setAccountId(activeTestAccount());
@@ -50,7 +53,14 @@ export default function WalletProvider({ children }: { children: ReactNode }) {
     if (HAS_TEST_WALLET) return; // dev test key: no browser wallet needed
     let sub: { unsubscribe(): void } | undefined;
     let cancelled = false;
-    (async () => {
+    let started = false;
+    // The wallet libraries are large. Load them once the page is up and the browser is idle, so they
+    // do not compete with the page and its market data; Connect starts them at once if clicked first.
+    const start = () => { if (started) return; started = true; void load(); };
+    startRef.current = start;
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    const idle = ric ? ric(start, { timeout: 2500 }) : window.setTimeout(start, 1200);
+    const load = () => (async () => {
       const [core, modalUi, my, meteor, here] = await Promise.all([
         import("@near-wallet-selector/core"),
         import("@near-wallet-selector/modal-ui"),
@@ -70,14 +80,24 @@ export default function WalletProvider({ children }: { children: ReactNode }) {
       setAccountId(pick(selector.store.getState()));
       sub = selector.store.observable.subscribe((s) => setAccountId(pick(s)));
       setReady(true);
+      if (openWhenReady.current) { openWhenReady.current = false; modalRef.current.show(); }
     })().catch((e) => {
       console.error("wallet selector failed to initialise", e);
       setReady(true);
     });
-    return () => { cancelled = true; sub?.unsubscribe(); };
+    return () => {
+      cancelled = true; sub?.unsubscribe();
+      const cic = (window as unknown as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback;
+      if (ric && cic) cic(idle); else window.clearTimeout(idle);
+    };
   }, []);
 
-  const connect = useCallback(() => modalRef.current?.show(), []);
+  // Clicked before the wallet code is in: start loading now and open the picker as soon as it is ready.
+  const connect = useCallback(() => {
+    if (modalRef.current) return modalRef.current.show();
+    openWhenReady.current = true;
+    startRef.current();
+  }, []);
   const disconnect = useCallback(async () => {
     if (HAS_TEST_WALLET) return;
     const w = await selectorRef.current?.wallet();
