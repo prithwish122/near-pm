@@ -57,7 +57,7 @@ export default function FaucetPage() {
     return (<><PageHead title="Faucet" sub="Test tokens are available on testnet only." /><Notice tone="info" title="Not available on mainnet">There is no faucet on mainnet. Use real wNEAR and USDC, and keep amounts small.</Notice></>);
 
   if (!accountId)
-    return (<><PageHead title="Faucet" sub="Get test tokens and register your account." /><Card><p className="text-[13px] text-white/60">Connect a wallet to use the faucet. You can get testnet NEAR from the NEAR testnet faucet.</p><Btn className="mt-4" onClick={connect} disabled={!ready}>Connect wallet</Btn></Card></>);
+    return (<><PageHead title="Faucet" sub="Get test tokens and register your account." /><Card><p className="text-[13px] text-white/60">Connect a wallet to use the faucet. You can get testnet NEAR from the NEAR testnet faucet.</p><Btn className="mt-4" onClick={connect}>Connect wallet</Btn></Card></>);
 
   return (
     <>
