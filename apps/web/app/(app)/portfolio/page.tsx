@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowUpRight, Eye, Layers, Wallet } from "lucide-react";
-import { Btn, Card, Field, Notice, PageHead, Skeleton, cx } from "@/components/app/ui";
+import { Btn, Card, Notice, PageHead, Skeleton, cx } from "@/components/app/ui";
 import { useWallet } from "@/components/app/WalletProvider";
 import { BOOK, MARKETS, type MarketConfig } from "@/lib/config";
 import { getMarkets, type PositionView } from "@/lib/api";
@@ -27,20 +27,32 @@ function WithdrawRow({ symbol, token, decimals, wallet, internal, demo }: { symb
     setBusy(true); setErr(null);
     try { await send([withdrawTx(BOOK, token, amt ?? undefined)]); setV(""); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };
+  const id = `withdraw-${symbol}`;
   return (
-    <tr className="border-t border-white/[0.05] align-middle">
-      <td className="py-3 pl-4 pr-3"><span className="flex items-center gap-2.5"><span className={cx("grid h-7 w-7 place-items-center rounded-full text-[11px] font-bold", symbol.startsWith("w") ? "bg-zinc-200 text-zinc-900" : "bg-[#2f6fe0] text-white")}>{symbol.startsWith("w") ? "N" : "$"}</span>{symbol}</span></td>
-      <td className="num py-3 pr-3 text-right">{fmtUnits(wallet, decimals, 4)}</td>
-      <td className="num py-3 pr-3 text-right">{fmtUnits(internal, decimals, 4)}</td>
-      <td className="py-3 pr-4">
-        <div className="flex items-center justify-end gap-2">
-          <div className="w-28"><Field label={`${symbol} to withdraw`} value={v} onChange={(e) => setV(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0.0" error={over ? "Exceeds balance" : null} className="[&>div]:mt-0 [&>div]:py-1.5 [&>label]:sr-only" disabled={demo} /></div>
-          <Btn variant="ghost" className="h-8 px-2.5 text-[11.5px]" onClick={() => setV(fmtUnits(internal, decimals, decimals).replace(/,/g, ""))} disabled={demo || internal === 0n}>Max</Btn>
-          <Btn variant="ghost" className="h-8 px-3 text-[11.5px]" onClick={go} disabled={demo || busy || internal === 0n || over || (v !== "" && amt === null)} title={demo ? "The demo wallet signs nothing" : undefined}>{busy ? "…" : "Withdraw"}</Btn>
+    <div className="border-t border-white/[0.05] px-4 py-4 first:border-t-0">
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex min-w-0 items-center gap-2.5 text-[13px]">
+          <span className={cx("grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold", symbol.startsWith("w") ? "bg-zinc-200 text-zinc-900" : "bg-[#2f6fe0] text-white")}>{symbol.startsWith("w") ? "N" : "$"}</span>
+          {symbol}
+        </span>
+        <dl className="flex gap-5 text-right">
+          <div><dt className="label">Wallet</dt><dd className="num mt-0.5 text-[13px] text-white/90">{fmtUnits(wallet, decimals, 4)}</dd></div>
+          <div><dt className="label">In book</dt><dd className="num mt-0.5 text-[13px] text-white">{fmtUnits(internal, decimals, 4)}</dd></div>
+        </dl>
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <label htmlFor={id} className="sr-only">{symbol} to withdraw</label>
+        <div className={cx("flex h-9 min-w-0 flex-1 items-center rounded-lg border bg-black/30 pl-3 pr-1 transition-colors focus-within:border-white/30", over ? "border-rose-400/60" : "border-white/10")}>
+          <input id={id} inputMode="decimal" value={v} onChange={(e) => setV(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0.0" disabled={demo}
+            aria-invalid={over} className="num min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-white/30 disabled:cursor-not-allowed" />
+          <button type="button" onClick={() => setV(fmtUnits(internal, decimals, decimals).replace(/,/g, ""))} disabled={demo || internal === 0n}
+            className="h-7 shrink-0 rounded-md px-2 text-[11.5px] text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-40">Max</button>
         </div>
-        {err && <p className="mt-1 text-right text-[11px] text-rose-300">{err}</p>}
-      </td>
-    </tr>
+        <Btn variant="ghost" className="h-9 shrink-0 px-4 text-[12px]" onClick={go} disabled={demo || busy || internal === 0n || over || (v !== "" && amt === null)} title={demo ? "The demo wallet signs nothing" : undefined}>{busy ? "…" : "Withdraw"}</Btn>
+      </div>
+      {over && <p className="mt-1.5 text-[11px] text-rose-300">Exceeds your book balance</p>}
+      {err && <p className="mt-1.5 text-[11px] text-rose-300">{err}</p>}
+    </div>
   );
 }
 
@@ -254,14 +266,9 @@ export default function PortfolioPage() {
           <h2 className="mb-3 text-[14px] font-medium text-white/90">Balances</h2>
           {data && (
             <Card pad={false}>
-              <div className="scroll-thin overflow-x-auto">
-                <table className="w-full min-w-[400px] text-[12.5px]">
-                  <thead><tr className="text-[10.5px] uppercase tracking-wider text-white/35"><th className="py-2.5 pl-4 text-left font-normal">Token</th><th className="py-2.5 pr-3 text-right font-normal">Wallet</th><th className="py-2.5 pr-3 text-right font-normal">In book</th><th className="py-2.5 pr-4 text-right font-normal">Withdraw</th></tr></thead>
-                  <tbody>
-                    <WithdrawRow symbol={m.baseSymbol} token={m.base} decimals={m.base_decimals} wallet={data.wb} internal={data.ib} demo={isDemo} />
-                    <WithdrawRow symbol={m.quoteSymbol} token={m.quote} decimals={m.quote_decimals} wallet={data.wq} internal={data.iq} demo={isDemo} />
-                  </tbody>
-                </table>
+              <div>
+                <WithdrawRow symbol={m.baseSymbol} token={m.base} decimals={m.base_decimals} wallet={data.wb} internal={data.ib} demo={isDemo} />
+                <WithdrawRow symbol={m.quoteSymbol} token={m.quote} decimals={m.quote_decimals} wallet={data.wq} internal={data.iq} demo={isDemo} />
               </div>
               <p className="border-t border-white/[0.05] px-4 py-3 text-[11px] leading-relaxed text-white/35">Closing a curve returns what is left to your book balance. Withdraw moves it to your wallet.</p>
             </Card>
