@@ -66,12 +66,21 @@ function RangeTrack({ p, m, mid }: { p: PositionView; m: MarketConfig; mid: numb
           {c !== s && <div className="absolute top-[13px] h-[9px] rounded-sm bg-ask/25" style={seg(s, c)} title="Filled" />}
         </>
       ); })()}
-      {mid && (
-        <div className="absolute -top-3 flex -translate-x-1/2 flex-col items-center" style={{ left: x(mid) }}>
-          <span className="num rounded-full bg-white px-1.5 py-px text-[9.5px] font-semibold text-[#0a0a0b]">{mid.toFixed(3)}</span>
-          <span className="h-5 w-px bg-white/70" />
-        </div>
-      )}
+      {mid && (() => {
+        // A short tick through the bar only (never down into the range labels), with a quiet label above.
+        // Near either end the label anchors to that side so it stays inside the card.
+        const f = (mid - lo) / (hi - lo);
+        const anchor = f < 0.12 ? "translate-x-0" : f > 0.88 ? "-translate-x-full" : "-translate-x-1/2";
+        return (
+          <>
+            <span aria-hidden className="absolute top-[10px] h-[15px] w-[2px] -translate-x-1/2 rounded-full bg-white/80" style={{ left: x(mid) }} />
+            {/* small, tight label whose box ends well above the tick (tick starts at 10px), so they never touch */}
+            <span className={cx("absolute -top-2 whitespace-nowrap font-mono text-[10px] leading-none tabular-nums text-white/45", anchor)} style={{ left: x(mid) }}>
+              mid <span className="text-white/80">{mid.toFixed(3)}</span>
+            </span>
+          </>
+        );
+      })()}
       <div className="num absolute inset-x-0 top-7 flex justify-between text-[10px] text-white/35"><span>{lo.toFixed(3)}</span><span>{hi.toFixed(3)}</span></div>
     </div>
   );
