@@ -219,3 +219,11 @@ describe("amountProblem", () => {
     expect(amountProblem("1.1234567", 6)).toBe("Too many decimals (max 6).");
   });
 });
+
+import { recycledIsBase } from "../lib/format";
+describe("recycledIsBase", () => {
+  it("is base for sell fills and quote for buy fills, regardless of where it recycled", () => {
+    expect(recycledIsBase("sell_base")).toBe(true);
+    expect(recycledIsBase("buy_base")).toBe(false);
+  });
+});

@@ -22,7 +22,7 @@ function WithdrawRow({ symbol, token, decimals, wallet, internal }: { symbol: st
   const over = amt !== null && amt > internal;
   const go = async () => {
     setBusy(true); setErr(null);
-    try { await send([withdrawTx(BOOK, token, amt ?? undefined)]); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
+    try { await send([withdrawTx(BOOK, token, amt ?? undefined)]); setV(""); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };
   return (
     <tr className="border-t border-white/5 align-top">

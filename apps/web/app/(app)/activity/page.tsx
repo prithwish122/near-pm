@@ -2,7 +2,7 @@
 import { Repeat2 } from "lucide-react";
 import { Card, Notice, PageHead, Skeleton } from "@/components/app/ui";
 import { BOOK, MARKETS, accountUrl } from "@/lib/config";
-import { fmtUnits, shortAccount, timeAgo } from "@/lib/format";
+import { fmtUnits, recycledIsBase, shortAccount, timeAgo } from "@/lib/format";
 import { view } from "@/lib/rpc";
 import { usePolling } from "@/lib/usePolling";
 import { formatPrice, PRICE_SCALE } from "@ebbflow/curve-math";
@@ -14,7 +14,7 @@ export default function ActivityPage() {
   const { data, loading, error } = usePolling(() => view<Fill[]>(BOOK, "get_recent_fills", { limit: 100 }), [], 5000);
   const unit = 10n ** BigInt(m.base_decimals);
   const recycledLabel = (f: Fill) => {
-    const amt = f.recycled_to === "ask" ? `${fmtUnits(f.recycled_amount, m.base_decimals, 4)} ${m.baseSymbol}` : `${fmtUnits(f.recycled_amount, m.quote_decimals, 4)} ${m.quoteSymbol}`;
+    const amt = recycledIsBase(f.side) ? `${fmtUnits(f.recycled_amount, m.base_decimals, 4)} ${m.baseSymbol}` : `${fmtUnits(f.recycled_amount, m.quote_decimals, 4)} ${m.quoteSymbol}`;
     return f.recycled_to === "balance" ? `${amt} → maker balance` : `${amt} → ${f.recycled_to} side`;
   };
 

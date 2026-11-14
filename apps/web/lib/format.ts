@@ -40,3 +40,6 @@ export function timeAgo(ms: number, now = Date.now()): string {
 
 export const YOCTO = 10n ** 24n;
 export const fmtNear = (yocto: bigint, max = 3) => fmtUnits(yocto, 24, max);
+
+/** Which token a fill's `recycled_amount` is in: the taker's input token (buy: quote, sell: base), whatever side it recycled to. */
+export const recycledIsBase = (side: "buy_base" | "sell_base") => side === "sell_base";
