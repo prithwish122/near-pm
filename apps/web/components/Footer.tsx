@@ -6,7 +6,7 @@ import Logo from "./Logo";
 const REPO = "https://github.com/prithwish122/near-pm";
 const cols: [string, [string, string][]][] = [
   ["Product", [["Trade", "/trade"], ["Make", "/make"], ["Portfolio", "/portfolio"], ["Activity", "/activity"], ...(HAS_FAUCET ? [["Faucet", "/faucet"] as [string, string]] : [])]],
-  ["Developers", [["Contract", `${REPO}/tree/main/contracts/ebbflow`], ["Solver API", `${REPO}/tree/main/services/solver`], ["MCP server", `${REPO}/tree/main/services/mcp`], ["Curve maths", "/articles/curve-maths-explained"], ["Integration tests", `${REPO}/tree/main/tests/integration`]]],
+  ["Developers", [["Documentation", "/docs"], ["Contract API", "/docs/contract"], ["Solver API", "/docs/solver-api"], ["MCP server", "/docs/mcp"], ["Curve maths", "/docs/curve-model"]]],
   ["Project", [["README and PRD", `${REPO}/blob/main/PRD.md`], ["Atomic fills", "/articles/atomic-fills-on-near"], ["Agents over MCP", "/articles/trading-with-agents-over-mcp"], ["Source code", REPO]]],
 ];
 

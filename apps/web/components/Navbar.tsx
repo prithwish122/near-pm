@@ -6,7 +6,7 @@ import Logo from "./Logo";
 import { HAS_FAUCET, IS_MAINNET, NETWORK } from "@/lib/config";
 import { cx } from "./app/ui";
 
-const links = [["Trade", "/trade"], ["Make", "/make"], ["How it works", "/#how"], ["Docs", "/#docs"]];
+const links = [["Trade", "/trade"], ["Make", "/make"], ["How it works", "/#how"], ["Docs", "/docs"]];
 
 /**
  * Landing navbar: same box and spacing as the app header. Transparent over the hero so it blends in,

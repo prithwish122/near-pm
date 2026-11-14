@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Reveal from "../Reveal";
 import DocArt, { minutes } from "../DocArt";
 import { articles } from "@/lib/articles";
@@ -26,6 +26,11 @@ export default function Docs() {
           </Reveal>
         ))}
       </div>
+      <Reveal className="mt-6 flex justify-center">
+        <Link href="/docs" className="inline-flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-5 text-[13px] font-medium text-white/85 transition-colors hover:border-emerald/40 hover:text-white">
+          Read the full documentation<ArrowRight size={14} />
+        </Link>
+      </Reveal>
     </section>
   );
 }
