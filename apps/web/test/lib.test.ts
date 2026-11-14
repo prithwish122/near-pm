@@ -151,3 +151,85 @@ describe("curve preview reproduces the PRD worked example (§7.8)", () => {
     expect(pts[pts.length - 1]![1]).toBeCloseTo(100, 6);
   });
 });
+
+import { DESTINATIONS, filterTokens, summarizeFundQuote, trimDecimals } from "../lib/intents";
+
+describe("intents funding helpers", () => {
+  const tokens = [
+    { assetId: "a", symbol: "USDC", blockchain: "near", decimals: 6 },
+    { assetId: "b", symbol: "USDC", blockchain: "eth", decimals: 6 },
+    { assetId: "c", symbol: "SOL", blockchain: "sol", decimals: 9 },
+  ];
+  it("filters by symbol or chain and puts NEAR-native assets last", () => {
+    expect(filterTokens(tokens, "usdc").map((t) => t.blockchain)).toEqual(["eth", "near"]);
+    expect(filterTokens(tokens, "sol")).toHaveLength(1);
+    expect(filterTokens(tokens, "", 2)).toHaveLength(2);
+  });
+  it("summarises a quote, or returns null when fields are missing", () => {
+    expect(summarizeFundQuote({ quote: { amountInFormatted: "10", amountOutFormatted: "4.1", timeEstimate: 120 } }, "USDC", "wNEAR")).toBe("Pay 10 USDC, receive about 4.1 wNEAR in about 2 min.");
+    expect(summarizeFundQuote({}, "USDC", "wNEAR")).toBeNull();
+  });
+  it("trims long decimals in quote summaries", () => {
+    expect(trimDecimals("30.944439523852116902904543")).toBe("30.944439");
+    expect(trimDecimals("100.0")).toBe("100");
+    expect(trimDecimals("99.988876")).toBe("99.988876");
+    expect(summarizeFundQuote({ quote: { amountInFormatted: "100.0", amountOutFormatted: "30.944439523852116902904543", timeEstimate: 60 } }, "USDC", "wNEAR")).toBe("Pay 100 USDC, receive about 30.944439 wNEAR in about 1 min.");
+  });
+  it("offers wNEAR and USDC on NEAR", () => {
+    expect(DESTINATIONS.map((d) => d.assetId)).toContain("nep141:wrap.near");
+  });
+});
+
+describe("network switch", () => {
+  const load = async (net?: string) => {
+    const { vi } = await import("vitest");
+    vi.resetModules();
+    if (net) vi.stubEnv("NEXT_PUBLIC_NEAR_NETWORK", net);
+    else vi.unstubAllEnvs();
+    return import("../lib/config");
+  };
+  it("defaults to testnet with the faucet and tUSDC", async () => {
+    const c = await load();
+    expect(c.NETWORK).toBe("testnet");
+    expect(c.HAS_FAUCET).toBe(true);
+    expect(c.EXPLORER).toBe("https://testnet.nearblocks.io");
+    expect(c.QUOTE_SYMBOL).toBe("tUSDC");
+  });
+  it("uses mainnet explorer, USDC label and no faucet once a book exists", async () => {
+    const { vi } = await import("vitest");
+    vi.resetModules();
+    vi.doMock("../../../deployments/mainnet.json", () => ({
+      default: { network: "mainnet", book: "book.team.near", owner: "team.near", markets: [{ market_id: 0, base: "wrap.near", quote: "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1", base_decimals: 24, quote_decimals: 6 }] },
+    }));
+    vi.stubEnv("NEXT_PUBLIC_NEAR_NETWORK", "mainnet");
+    const c = await import("../lib/config");
+    expect([c.NETWORK, c.BOOK, c.HAS_FAUCET, c.EXPLORER, c.QUOTE_SYMBOL, c.MARKET.baseSymbol]).toEqual(["mainnet", "book.team.near", false, "https://nearblocks.io", "USDC", "wNEAR"]);
+    expect(c.RPC_URLS).toContain("https://rpc.mainnet.near.org");
+  });
+  it("refuses mainnet until a book is deployed", async () => {
+    const { vi } = await import("vitest");
+    vi.doUnmock("../../../deployments/mainnet.json");
+    await expect(load("mainnet")).rejects.toThrow(/deploy-mainnet/);
+  });
+});
+
+import { amountProblem } from "../lib/format";
+describe("amountProblem", () => {
+  it("explains why an amount is unusable", () => {
+    expect(amountProblem("", 24)).toBeNull();
+    expect(amountProblem("1.5", 24)).toBeNull();
+    expect(amountProblem("abc", 24)).toBe("Enter a valid number.");
+    expect(amountProblem("0", 24)).toBe("Amount must be greater than 0.");
+    expect(amountProblem("0.000", 6)).toBe("Amount must be greater than 0.");
+    expect(amountProblem("1.0000000000000000000000001", 24)).toBe("Too many decimals (max 24).");
+    expect(amountProblem("1.1234567", 6)).toBe("Too many decimals (max 6).");
+  });
+});
+
+import { recycledIsBase } from "../lib/format";
+describe("recycledIsBase", () => {
+  it("is base for sell fills and quote for buy fills, regardless of where it recycled", () => {
+    expect(recycledIsBase("sell_base")).toBe(true);
+    expect(recycledIsBase("buy_base")).toBe(false);
+  });
+});

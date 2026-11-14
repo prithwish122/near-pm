@@ -18,6 +18,15 @@ export function parseAmount(input: string, decimals: number): bigint | null {
   }
 }
 
+/** Why `input` can't be used as an amount, or null when it is empty or valid. */
+export function amountProblem(input: string, decimals: number): string | null {
+  const v = input.trim();
+  if (!v) return null;
+  if (!/^\d+(\.\d+)?$/.test(v)) return "Enter a valid number.";
+  if ((v.split(".")[1]?.length ?? 0) > decimals) return `Too many decimals (max ${decimals}).`;
+  return /^0+(\.0*)?$/.test(v) ? "Amount must be greater than 0." : null;
+}
+
 /** Keeps the start and the distinguishing tail, e.g. `ebbflo…-priya.testnet`. */
 export const shortAccount = (id: string, max = 22) => (id.length <= max ? id : `${id.slice(0, 6)}…${id.slice(-14)}`);
 
@@ -31,3 +40,6 @@ export function timeAgo(ms: number, now = Date.now()): string {
 
 export const YOCTO = 10n ** 24n;
 export const fmtNear = (yocto: bigint, max = 3) => fmtUnits(yocto, 24, max);
+
+/** Which token a fill's `recycled_amount` is in: the taker's input token (buy: quote, sell: base), whatever side it recycled to. */
+export const recycledIsBase = (side: "buy_base" | "sell_base") => side === "sell_base";

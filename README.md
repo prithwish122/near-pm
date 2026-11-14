@@ -28,6 +28,7 @@ Built for **NEAR HACKATHON 2026** · Tracks: **Unstoppable DeFi** (primary), **A
 - [Testing](#testing)
 - [Repository layout](#repository-layout)
 - [Contract reference](#contract-reference)
+- [NEAR Intents](#near-intents)
 - [Known limitations](#known-limitations)
 - [Roadmap](#roadmap)
 
@@ -260,6 +261,17 @@ pnpm web                                          # http://localhost:3100
 AGENT_ACCOUNT_ID=you-agent.testnet pnpm --filter @ebbflow/mcp demo 0.5
 ```
 
+### Switching networks
+
+| | Testnet (default) | Mainnet |
+|---|---|---|
+| Deploy | `./scripts/deploy.sh` | `CONFIRM=yes ./scripts/deploy-mainnet.sh` (writes `deployments/mainnet.json`) |
+| Solver | `pnpm solver` | `pnpm solver:mainnet` |
+| Web | `pnpm web` | `pnpm web:mainnet` (or `NEXT_PUBLIC_NEAR_NETWORK=mainnet`) |
+| MCP | default | `NEAR_NETWORK=mainnet` |
+
+On mainnet the web app uses the mainnet explorer and RPCs, labels the quote token USDC, and hides the faucet. It refuses to start until `deployments/mainnet.json` has a book.
+
 ### Solver API
 
 | Endpoint | Returns |
@@ -329,6 +341,47 @@ PRD.md                full product requirements and design
 
 NEAR's VM accepts only MVP WebAssembly, and Rust ≥ 1.87 emits newer features (bulk-memory, etc.) by default, including in the precompiled `std`. [`scripts/build.sh`](scripts/build.sh) therefore rebuilds `std` on nightly with `target-cpu=mvp`, sets `--cfg near` (which near-sdk needs for host panics, so error messages reach callers), and validates the output with `wasm-tools`.
 
+## NEAR Intents
+
+Everything here lives in `services/solver/src/intents/` (plus the web `/fund` page and two MCP tools). **NEAR Intents exists only on mainnet**, so none of it runs against the testnet deployment. It is covered by offline tests (mock relay, mock 1Click, fake chain) and **has not been run against the live relay or mainnet**.
+
+### 1. Market-maker solver (`pnpm intents`)
+
+Connects to the solver relay (`wss://solver-relay-v2.chaindefuser.com/ws`), subscribes to quote requests for the book's tokens, prices each one by routing it across Ebbflow curves plus a margin (`INTENTS_MARGIN_BPS`, default 30), and answers with a NEP-413 signed `token_diff` intent.
+
+| Request | Handling |
+|---|---|
+| User pays quote token, `exact_amount_in` | Spends the input minus margin on the book (`routeBuyWithQuote`) |
+| User pays quote token, `exact_amount_out` | Exact-size buy route, plus margin |
+| User pays base token, `exact_amount_in` | Exact-size sell route, minus margin |
+| User pays base token, `exact_amount_out` | Declined (the router has no exact-quote-out sell) |
+| Unknown pair, no liquidity, above `INTENTS_MAX_QUOTE_RAW` (default 5 USDC), or the solver's `intents.near` balance can't cover the payout | Declined |
+
+**Nonces** are the verifier's current 4-byte `current_salt` followed by 28 random bytes (`salt.ts`).
+
+**Hedging** (`hedger.ts`). When a quote settles (and every `INTENTS_HEDGE_INTERVAL_MS`, default 30 s), the rebalancer compares the solver's `intents.near` balances with the start-up baseline and closes the gap on the book: `ft_withdraw` from `intents.near`, swap on the Ebbflow book, deposit the results back. It works from balances rather than quote hashes. Margin earned stays in inventory.
+
+```bash
+export EBBFLOW_CONTRACT=<mainnet book> NEAR_NETWORK=mainnet
+export INTENTS_SOLVER_ACCOUNT=solver.near INTENTS_SOLVER_KEY=ed25519:...
+export INTENTS_JWT=<partner portal token>
+
+pnpm intents setup        # once: add_public_key on intents.near + token storage registration
+# deposit inventory: ft_transfer_call(token → intents.near, msg = solver account)
+pnpm intents              # dry run: logs the quotes it would send
+INTENTS_RESPOND=1 pnpm intents   # sign, respond and hedge
+```
+
+### 2. 1Click funding (pay from any chain)
+
+- **Solver endpoints:** `GET /intents/tokens`, `POST /intents/swap-quote`, `GET /intents/status`. `INTENTS_API_KEY` stays on the server; quotes are dry by default.
+- **Web:** the **Fund** page picks an asset on any chain, shows a quote, then a deposit address and live status.
+- **MCP:** `intents_tokens` and `intents_fund_quote` (dry-run quote delivered to the agent's own account). Enabled when `INTENTS_API_KEY` is set.
+
+### Before going live
+
+These need things only you can provide or check: a Partner Portal JWT (KYB), a mainnet book deployment and funded solver account, and a pass against the live relay. The nonce layout and the `ft_withdraw` / `mt_balance_of` call shapes follow the verifier docs but were not exercised on-chain. The hedger's fill amounts are tested against a fake chain, not real settlement.
+
 ## Known limitations
 
 - **Path dependence for `alpha > 0`**, handled by the one-leg-per-position rule (see above).
@@ -339,7 +392,7 @@ NEAR's VM accepts only MVP WebAssembly, and Rust ≥ 1.87 emits newer features (
 
 ## Roadmap
 
-- **NEAR Intents solver:** quote Intents swap requests from Ebbflow curves so swaps from any chain can hit this liquidity (Intents is mainnet-only; core is on testnet).
+- **NEAR Intents on mainnet:** code is built (see [NEAR Intents](#near-intents)); remaining are a mainnet book deployment, partner credentials and live tx hashes.
 - **Per-maker vault sub-accounts** for full self-custody.
 - **On-chain agent vault** with per-trade and daily limits callable by function-call keys.
 - **Autonomous market-making agent** on NEAR AI Cloud; **Chain Signatures** for assets on other chains.

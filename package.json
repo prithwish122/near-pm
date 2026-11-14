@@ -7,7 +7,10 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "solver": "pnpm --filter @ebbflow/solver dev",
-    "web": "pnpm --filter @ebbflow/web dev"
+    "intents": "pnpm --filter @ebbflow/solver intents",
+    "web": "pnpm --filter @ebbflow/web dev",
+    "web:mainnet": "NEXT_PUBLIC_NEAR_NETWORK=mainnet pnpm --filter @ebbflow/web dev",
+    "solver:mainnet": "NEAR_NETWORK=mainnet NEAR_RPC_URLS=https://rpc.mainnet.near.org pnpm --filter @ebbflow/solver dev"
   },
   "devDependencies": {
     "typescript": "^5.6.0",

@@ -131,6 +131,41 @@ export function createServer(tools: EbbflowTools): McpServer {
   );
 
   server.registerTool(
+    "intents_tokens",
+    {
+      title: "NEAR Intents tokens",
+      description:
+        "Assets on other chains that NEAR Intents can swap into this agent's NEAR account (mainnet only). Use the assetId " +
+        "values with intents_fund_quote. Public data, no key needed.",
+      inputSchema: {
+        query: z.string().optional().describe('Filter by symbol, chain or asset id, e.g. "usdc" or "eth"'),
+        limit: z.number().int().min(1).max(100).default(25),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    (a) => run(() => tools.intentsTokens(a), (r: { count: number }) => `${r.count} asset(s).`),
+  );
+
+  server.registerTool(
+    "intents_fund_quote",
+    {
+      title: "Quote cross-chain funding",
+      description:
+        "Dry-run quote for swapping an asset from another chain into a token on NEAR, delivered to the agent's own account " +
+        "so it can trade on Ebbflow. Moves no funds. amount is in the origin asset's smallest unit.",
+      inputSchema: {
+        origin_asset: z.string().describe("Intents asset id to pay with, from intents_tokens"),
+        destination_asset: z.string().describe("Intents asset id to receive, e.g. nep141:wrap.near"),
+        amount: z.string().regex(/^\d+$/).describe("Origin amount, smallest unit"),
+        refund_to: z.string().describe("Address on the origin chain to refund if the swap fails"),
+        slippage_bps: z.number().int().min(1).max(500).default(100),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    (a) => run(() => tools.intentsFundQuote(a), () => "Dry quote only; nothing was sent."),
+  );
+
+  server.registerTool(
     "get_agent_balance",
     {
       title: "Get agent balance",

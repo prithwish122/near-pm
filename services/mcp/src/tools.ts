@@ -10,6 +10,7 @@ import {
   summary,
   type BookSource,
   type Market,
+  type OneClick,
   type QuoteResponse,
 } from "@ebbflow/solver";
 import { Budget, BudgetError } from "./budget.js";
@@ -27,6 +28,8 @@ export interface Deps {
   wallet?: AgentWallet;
   budget: Budget;
   config: Pick<Config, "explorerTxUrl" | "limits">;
+  /** NEAR Intents 1Click client; enables the cross-chain funding tools. */
+  oneClick?: OneClick;
 }
 
 /** Trade parameters shared by quote / simulate / execute. */
@@ -62,6 +65,33 @@ export class EbbflowTools {
 
   private get agentId(): string | undefined {
     return this.d.wallet?.accountId;
+  }
+
+  private get oneClick(): OneClick {
+    if (!this.d.oneClick) throw new ToolError("NEAR Intents is not configured on this server");
+    return this.d.oneClick;
+  }
+
+  /** Assets that can be swapped into the book's tokens from other chains via NEAR Intents. */
+  async intentsTokens(a: { query?: string; limit?: number }) {
+    const q = a.query?.toLowerCase();
+    const tokens = (await this.oneClick.getTokens()).filter((t) => !q || `${t.symbol} ${t.blockchain} ${t.assetId}`.toLowerCase().includes(q));
+    return { count: tokens.length, tokens: tokens.slice(0, Math.min(100, a.limit ?? 25)) };
+  }
+
+  /** Dry quote for funding the agent's NEAR account from another chain. Sends nothing. */
+  async intentsFundQuote(a: { origin_asset: string; destination_asset: string; amount: string; refund_to: string; slippage_bps?: number }) {
+    const recipient = this.agentId;
+    if (!recipient) throw new ToolError("no agent account configured to receive funds");
+    return this.oneClick.quote({
+      originAsset: a.origin_asset,
+      destinationAsset: a.destination_asset,
+      amount: a.amount,
+      recipient,
+      refundTo: a.refund_to,
+      slippageBps: a.slippage_bps,
+      dry: true,
+    });
   }
 
   async listMarkets() {

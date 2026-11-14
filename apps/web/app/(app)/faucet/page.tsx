@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Btn, Card, Field, Notice, PageHead, Skeleton } from "@/components/app/ui";
 import { useWallet } from "@/components/app/WalletProvider";
-import { BOOK, MARKETS } from "@/lib/config";
+import { BOOK, HAS_FAUCET, MARKETS } from "@/lib/config";
 import { fmtNear, fmtUnits, parseAmount, YOCTO } from "@/lib/format";
 import { checkRegistration, registrationTxs } from "@/lib/registration";
 import { ftBalance, nearBalance, view } from "@/lib/rpc";
@@ -53,8 +53,11 @@ export default function FaucetPage() {
     void run("wrap", txs);
   };
 
+  if (!HAS_FAUCET)
+    return (<><PageHead title="Faucet" sub="Test tokens are available on testnet only." /><Notice tone="info" title="Not available on mainnet">There is no faucet on mainnet. Use real wNEAR and USDC, and keep amounts small.</Notice></>);
+
   if (!accountId)
-    return (<><PageHead title="Faucet" sub="Get test tokens and register your account." /><Card><p className="text-[13px] text-white/60">Connect a wallet to use the faucet. You can get testnet NEAR from the NEAR testnet faucet.</p><Btn className="mt-4" onClick={connect} disabled={!ready}>Connect wallet</Btn></Card></>);
+    return (<><PageHead title="Faucet" sub="Get test tokens and register your account." /><Card><p className="text-[13px] text-white/60">Connect a wallet to use the faucet. You can get testnet NEAR from the NEAR testnet faucet.</p><Btn className="mt-4" onClick={connect}>Connect wallet</Btn></Card></>);
 
   return (
     <>

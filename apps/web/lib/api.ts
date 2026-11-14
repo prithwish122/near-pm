@@ -7,7 +7,7 @@ export class ApiError extends Error {
   }
 }
 
-async function call<T>(path: string, init?: RequestInit): Promise<T> {
+export async function call<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${SOLVER_URL}${path}`, { ...init, headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(10_000) });

@@ -6,3 +6,4 @@ export * from "./router.js";
 export * from "./service.js";
 export { createApp } from "./server.js";
 export type * from "./types.js";
+export * from "./intents/index.js";
