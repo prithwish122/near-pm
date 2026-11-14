@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Github } from "lucide-react";
-import { BOOK, accountUrl } from "@/lib/config";
+import { BOOK, HAS_FAUCET, NETWORK_NOTE, accountUrl } from "@/lib/config";
 import Logo from "./Logo";
 
 const REPO = "https://github.com/prithwish122/near-pm";
 const cols: [string, [string, string][]][] = [
-  ["Product", [["Trade", "/trade"], ["Make", "/make"], ["Portfolio", "/portfolio"], ["Activity", "/activity"], ["Faucet", "/faucet"]]],
+  ["Product", [["Trade", "/trade"], ["Make", "/make"], ["Portfolio", "/portfolio"], ["Activity", "/activity"], ...(HAS_FAUCET ? [["Faucet", "/faucet"] as [string, string]] : [])]],
   ["Developers", [["Contract", `${REPO}/tree/main/contracts/ebbflow`], ["Solver API", `${REPO}/tree/main/services/solver`], ["MCP server", `${REPO}/tree/main/services/mcp`], ["Curve maths", "/articles/curve-maths-explained"], ["Integration tests", `${REPO}/tree/main/tests/integration`]]],
   ["Project", [["README and PRD", `${REPO}/blob/main/PRD.md`], ["Atomic fills", "/articles/atomic-fills-on-near"], ["Agents over MCP", "/articles/trading-with-agents-over-mcp"], ["Source code", REPO]]],
 ];
@@ -32,7 +32,7 @@ export default function Footer() {
           ))}
         </div>
         <div className="mt-14 flex flex-col gap-3 border-t border-dark/10 pt-5 text-[10px] text-dark/55 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 Ebbflow. Built at NEAR Hackathon 2026. Testnet only, not audited.</p>
+          <p>© 2026 Ebbflow. Built at NEAR Hackathon 2026. {NETWORK_NOTE[0]!.toUpperCase() + NETWORK_NOTE.slice(1)}.</p>
           <p>Book contract: <a href={accountUrl(BOOK)} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-dark">{BOOK}</a></p>
         </div>
       </div>

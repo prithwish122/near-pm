@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { IS_MAINNET } from "@/lib/config";
 import Reveal from "./Reveal";
 
 export default function NewsletterSection() {
@@ -15,7 +16,7 @@ export default function NewsletterSection() {
     <section className="news-bg relative pb-40 pt-16 sm:pb-52 sm:pt-20">
       <Reveal className="wrap text-center">
         <span className="pill border-white/15 bg-white/[0.05] text-white/75">Updates</span>
-        <h2 className="mx-auto mt-5 max-w-[700px] text-[26px] font-normal leading-tight tracking-tight sm:text-[34px]">Be first when Ebbflow leaves testnet</h2>
+        <h2 className="mx-auto mt-5 max-w-[700px] text-[26px] font-normal leading-tight tracking-tight sm:text-[34px]">{IS_MAINNET ? "Be first to hear what ships next" : "Be first when Ebbflow leaves testnet"}</h2>
         <p className="mx-auto mt-4 max-w-[380px] text-[12px] text-white/55">Roadmap: a NEAR Intents solver, per-maker vault sub-accounts, an agent vault and an audited mainnet launch.</p>
         <form onSubmit={submit} noValidate className="mx-auto mt-7 flex max-w-[440px] flex-col gap-2 sm:flex-row">
           <label htmlFor="nl" className="sr-only">Email address</label>

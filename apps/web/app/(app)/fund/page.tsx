@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Btn, Card, Field, Notice, PageHead, Skeleton } from "@/components/app/ui";
 import { useWallet } from "@/components/app/WalletProvider";
+import { IS_MAINNET } from "@/lib/config";
 import { ApiError } from "@/lib/api";
 import { DESTINATIONS, filterTokens, getFundStatus, getIntentsTokens, postFundQuote, summarizeFundQuote, type FundQuoteResponse, type IntentsToken } from "@/lib/intents";
 import { usePolling } from "@/lib/usePolling";
@@ -23,7 +24,7 @@ export default function FundPage() {
   const list = tokens.data ? filterTokens(tokens.data.tokens, query) : [];
   const deposit = quote?.quote?.depositAddress;
   const status = usePolling(async () => (deposit ? getFundStatus(deposit) : null), [deposit], 8000);
-  const to = recipient || "";
+  const to = recipient || (IS_MAINNET && accountId ? accountId : "");
 
   const run = async (dry: boolean) => {
     if (!origin) return;
@@ -41,7 +42,7 @@ export default function FundPage() {
   return (
     <>
       <PageHead title="Fund" sub="Pay from any chain with NEAR Intents and receive wNEAR or USDC on NEAR, ready to trade on the book." />
-      <div className="mb-5"><Notice tone="info" title="Mainnet only">NEAR Intents runs on NEAR mainnet and has no testnet. Use a mainnet NEAR account as the recipient. This page cannot fund the testnet deployment{accountId ? ` (connected: ${accountId})` : ""}.</Notice></div>
+      {!IS_MAINNET && <div className="mb-5"><Notice tone="info" title="Mainnet only">NEAR Intents runs on NEAR mainnet and has no testnet. Use a mainnet NEAR account as the recipient. This page cannot fund the testnet deployment{accountId ? ` (connected: ${accountId})` : ""}. Start the app with NEXT_PUBLIC_NEAR_NETWORK=mainnet to use it.</Notice></div>}
       {tokens.error && <div className="mb-5"><Notice tone="error" title="Cannot load assets">{String(tokens.error instanceof Error ? tokens.error.message : tokens.error)}</Notice></div>}
       {tokens.data && !tokens.data.enabled && <div className="mb-5"><Notice tone="warn" title="Quotes are disabled">The solver has no INTENTS_API_KEY, so you can browse assets but not request quotes.</Notice></div>}
       {err && <div className="mb-5"><Notice tone="error" title="Quote failed">{err}</Notice></div>}
@@ -68,7 +69,7 @@ export default function FundPage() {
           <div className="mt-4 flex gap-2">
             {DESTINATIONS.map((d) => <Btn key={d.assetId} variant={dest.assetId === d.assetId ? "primary" : "ghost"} onClick={() => setDest(d)}>Receive {d.symbol}</Btn>)}
           </div>
-          <Field className="mt-4" label="Recipient (mainnet NEAR account)" value={recipient} onChange={(e) => setRecipient(e.target.value.trim())} placeholder="you.near" />
+          <Field className="mt-4" label="Recipient (mainnet NEAR account)" value={recipient} onChange={(e) => setRecipient(e.target.value.trim())} placeholder={IS_MAINNET && accountId ? accountId : "you.near"} />
           <Field className="mt-4" label={`Refund address${origin ? ` on ${origin.blockchain}` : ""}`} value={refundTo} onChange={(e) => setRefundTo(e.target.value.trim())} hint="Where the funds go back if the swap fails." />
           <div className="mt-4 flex gap-2">
             <Btn className="flex-1" disabled={!canQuote || !tokens.data?.enabled} onClick={() => run(true)}>{busy ? "Quoting…" : "Get quote"}</Btn>

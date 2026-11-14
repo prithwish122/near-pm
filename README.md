@@ -261,6 +261,17 @@ pnpm web                                          # http://localhost:3100
 AGENT_ACCOUNT_ID=you-agent.testnet pnpm --filter @ebbflow/mcp demo 0.5
 ```
 
+### Switching networks
+
+| | Testnet (default) | Mainnet |
+|---|---|---|
+| Deploy | `./scripts/deploy.sh` | `CONFIRM=yes ./scripts/deploy-mainnet.sh` (writes `deployments/mainnet.json`) |
+| Solver | `pnpm solver` | `pnpm solver:mainnet` |
+| Web | `pnpm web` | `pnpm web:mainnet` (or `NEXT_PUBLIC_NEAR_NETWORK=mainnet`) |
+| MCP | default | `NEAR_NETWORK=mainnet` |
+
+On mainnet the web app uses the mainnet explorer and RPCs, labels the quote token USDC, and hides the faucet. It refuses to start until `deployments/mainnet.json` has a book.
+
 ### Solver API
 
 | Endpoint | Returns |

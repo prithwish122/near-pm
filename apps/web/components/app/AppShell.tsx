@@ -4,13 +4,13 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { LogOut, Wallet } from "lucide-react";
 import Logo from "@/components/Logo";
-import { BOOK, NETWORK, accountUrl } from "@/lib/config";
+import { BOOK, HAS_FAUCET, IS_MAINNET, NETWORK, NETWORK_NOTE, accountUrl } from "@/lib/config";
 import { shortAccount } from "@/lib/format";
 import { cx } from "./ui";
 import TxBanner from "./TxBanner";
 import { useWallet } from "./WalletProvider";
 
-const NAV = [["Trade", "/trade"], ["Make", "/make"], ["Portfolio", "/portfolio"], ["Activity", "/activity"], ["Faucet", "/faucet"], ["Fund", "/fund"]] as const;
+const NAV = [["Trade", "/trade"], ["Make", "/make"], ["Portfolio", "/portfolio"], ["Activity", "/activity"], ...(HAS_FAUCET ? [["Faucet", "/faucet"]] : []), ["Fund", "/fund"]] as [string, string][];
 
 function WalletButton() {
   const { ready, accountId, connect, disconnect } = useWallet();
@@ -41,7 +41,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-20 border-b border-white/[0.07] bg-ink/85 backdrop-blur-xl">
         <div className="wrap flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-3"><Logo /><span className="pill border-amber-300/40 bg-amber-300/10 capitalize text-amber-200">{NETWORK}</span></div>
+          <div className="flex items-center gap-3"><Logo /><span className={cx("pill capitalize", IS_MAINNET ? "border-rose-300/40 bg-rose-300/10 text-rose-200" : "border-amber-300/40 bg-amber-300/10 text-amber-200")}>{NETWORK}</span></div>
           <nav aria-label="App" className="hidden items-center gap-1 md:flex">
             {NAV.map(([l, h]) => <Link key={h} href={h} aria-current={path === h ? "page" : undefined} className={cx("rounded-lg px-3.5 py-1.5 text-[13px] transition", path === h ? "bg-white/10 text-white" : "text-white/65 hover:text-white")}>{l}</Link>)}
           </nav>
@@ -57,7 +57,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       </main>
       <footer className="border-t border-white/[0.07] py-6 text-[11px] text-white/45">
         <div className="wrap flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p>Ebbflow on NEAR {NETWORK}. Testnet only, not audited.</p>
+          <p>Ebbflow on NEAR {NETWORK}. {NETWORK_NOTE[0]!.toUpperCase() + NETWORK_NOTE.slice(1)}.</p>
           <p>Book contract: <a className="underline underline-offset-2 hover:text-white" href={accountUrl(BOOK)} target="_blank" rel="noreferrer">{BOOK}</a></p>
         </div>
       </footer>

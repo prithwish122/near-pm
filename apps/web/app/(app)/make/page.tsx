@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import DepthPlot, { type Series } from "@/components/app/DepthPlot";
 import { Btn, Card, Field, Notice, PageHead, cx } from "@/components/app/ui";
 import { useWallet } from "@/components/app/WalletProvider";
-import { BOOK, MARKETS } from "@/lib/config";
+import { BOOK, HAS_FAUCET, MARKETS } from "@/lib/config";
 import { parseSide, previewSide, type SideForm } from "@/lib/curvePreview";
 import { fmtUnits, parseAmount } from "@/lib/format";
 import { checkRegistration, registrationTxs } from "@/lib/registration";
@@ -155,7 +155,7 @@ export default function MakePage() {
                   <div><p className="font-medium">Publish position</p><p className="text-[12px] text-white/60">Storage deposit 0.01 NEAR, refunded when you close.</p></div>
                 </li>
               </ol>
-              {lacksFunds && <div className="mt-4"><Notice tone="warn" title="Not enough tokens in your wallet">Get wNEAR and tUSDC from the <Link href="/faucet" className="underline underline-offset-2">faucet</Link>.</Notice></div>}
+              {lacksFunds && <div className="mt-4"><Notice tone="warn" title="Not enough tokens in your wallet">{HAS_FAUCET ? <>Get wNEAR and tUSDC from the <Link href="/faucet" className="underline underline-offset-2">faucet</Link>.</> : <>Add {m.baseSymbol} and {m.quoteSymbol} to your wallet first.</>}</Notice></div>}
               {err && <p role="alert" className="mt-3 text-[12px] text-rose-300">{err}</p>}
               {step1Needed ? (
                 <Btn className="mt-5 w-full" onClick={deposit} disabled={busy || !valid || !d || lacksFunds}>{busy ? "Waiting for wallet…" : "Step 1: Deposit"}</Btn>

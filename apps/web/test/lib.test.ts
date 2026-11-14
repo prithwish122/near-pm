@@ -173,3 +173,36 @@ describe("intents funding helpers", () => {
     expect(DESTINATIONS.map((d) => d.assetId)).toContain("nep141:wrap.near");
   });
 });
+
+describe("network switch", () => {
+  const load = async (net?: string) => {
+    const { vi } = await import("vitest");
+    vi.resetModules();
+    if (net) vi.stubEnv("NEXT_PUBLIC_NEAR_NETWORK", net);
+    else vi.unstubAllEnvs();
+    return import("../lib/config");
+  };
+  it("defaults to testnet with the faucet and tUSDC", async () => {
+    const c = await load();
+    expect(c.NETWORK).toBe("testnet");
+    expect(c.HAS_FAUCET).toBe(true);
+    expect(c.EXPLORER).toBe("https://testnet.nearblocks.io");
+    expect(c.QUOTE_SYMBOL).toBe("tUSDC");
+  });
+  it("uses mainnet explorer, USDC label and no faucet once a book exists", async () => {
+    const { vi } = await import("vitest");
+    vi.resetModules();
+    vi.doMock("../../../deployments/mainnet.json", () => ({
+      default: { network: "mainnet", book: "book.team.near", owner: "team.near", markets: [{ market_id: 0, base: "wrap.near", quote: "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1", base_decimals: 24, quote_decimals: 6 }] },
+    }));
+    vi.stubEnv("NEXT_PUBLIC_NEAR_NETWORK", "mainnet");
+    const c = await import("../lib/config");
+    expect([c.NETWORK, c.BOOK, c.HAS_FAUCET, c.EXPLORER, c.QUOTE_SYMBOL, c.MARKET.baseSymbol]).toEqual(["mainnet", "book.team.near", false, "https://nearblocks.io", "USDC", "wNEAR"]);
+    expect(c.RPC_URLS).toContain("https://rpc.mainnet.near.org");
+  });
+  it("refuses mainnet until a book is deployed", async () => {
+    const { vi } = await import("vitest");
+    vi.doUnmock("../../../deployments/mainnet.json");
+    await expect(load("mainnet")).rejects.toThrow(/deploy-mainnet/);
+  });
+});

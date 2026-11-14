@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowDownUp } from "lucide-react";
+import { NETWORK, NETWORK_NOTE, QUOTE_SYMBOL } from "@/lib/config";
 import { ASK_CAPACITY, BEST_ASK, BEST_BID, BID_CAPACITY, baseForQuote, route, totals } from "@/lib/curve";
 
 const SLIPPAGE = 0.005;
@@ -19,7 +20,7 @@ function Token({ symbol, color, glyph }: { symbol: string; color: string; glyph:
   );
 }
 const WNEAR = { symbol: "wNEAR", color: "#d8f5e6", glyph: "N" };
-const TUSDC = { symbol: "tUSDC", color: "#55ffb0", glyph: "$" };
+const TUSDC = { symbol: QUOTE_SYMBOL, color: "#55ffb0", glyph: "$" };
 
 export default function SwapCard() {
   const [side, setSide] = useState<"buy" | "sell">("buy");
@@ -57,7 +58,7 @@ export default function SwapCard() {
   const exec = () => {
     if (over) return setMsg({ ok: false, text: `Only ${trim(cap, 2)} wNEAR available on this side of the book.` });
     if (!(t.base > 0)) return setMsg({ ok: false, text: "Enter an amount greater than zero." });
-    const extra = side === "buy" ? `Unused input refunded: ${fmt(limit - t.quote)} tUSDC.` : `Minimum received: ${fmt(limit)} tUSDC.`;
+    const extra = side === "buy" ? `Unused input refunded: ${fmt(limit - t.quote)} ${QUOTE_SYMBOL}.` : `Minimum received: ${fmt(limit)} ${QUOTE_SYMBOL}.`;
     setMsg({ ok: true, text: `Demo route: ${legs.length} maker${legs.length > 1 ? "s" : ""}, one ft_transfer_call. ${extra} No funds moved.` });
   };
 
@@ -75,7 +76,7 @@ export default function SwapCard() {
   return (
     <div className="glass relative w-full rounded-[22px] p-5 shadow-[0_30px_80px_-30px_rgba(30,190,110,.55)] sm:p-6" id="buy">
       <div className="flex items-center justify-between">
-        <h2 className="text-[15px] font-medium text-white/90">Trade wNEAR / tUSDC</h2>
+        <h2 className="text-[15px] font-medium text-white/90">Trade wNEAR / {QUOTE_SYMBOL}</h2>
         <div role="tablist" aria-label="Side" className="flex rounded-lg bg-white/[0.07] p-0.5 text-[11px]">
           {(["buy", "sell"] as const).map((s) => (
             <button key={s} role="tab" aria-selected={side === s} onClick={() => flip(s)}
@@ -108,18 +109,18 @@ export default function SwapCard() {
           <p className="mt-1.5 text-[11px] text-white/50">{over ? `Only ${trim(cap, 2)} wNEAR available on this side.` : "Enter an amount to see the route."}</p>
         )}
         {legs.length > 0 && (
-          <p className="mt-2 border-t border-white/10 pt-2 text-[11px] text-white/60 tabular-nums">Avg {fmt(t.avg, 4)} · impact {impact} bps · {side === "buy" ? "max spend" : "min receive"} {fmt(limit)} tUSDC</p>
+          <p className="mt-2 border-t border-white/10 pt-2 text-[11px] text-white/60 tabular-nums">Avg {fmt(t.avg, 4)} · impact {impact} bps · {side === "buy" ? "max spend" : "min receive"} {fmt(limit)} {QUOTE_SYMBOL}</p>
         )}
       </div>
 
       <p className="mt-3 text-center text-[11px] text-white/55">Quote refreshes in <span className="tabular-nums text-white/80">{mm} : {ss}</span></p>
-      <p className="mt-1 text-center text-[10px] text-white/40">Demo book from the spec · 0.5% slippage · testnet only</p>
+      <p className="mt-1 text-center text-[10px] text-white/40">Demo book from the spec · 0.5% slippage · {NETWORK_NOTE}</p>
 
       <button onClick={exec} className="mt-4 h-11 w-full rounded-lg bg-white text-[13px] font-medium text-dark transition hover:bg-mint2 active:scale-[.99]">
         Execute (1 tx)
       </button>
       {msg && <p role="status" className={`mt-3 text-center text-[11px] ${msg.ok ? "text-emerald-300" : "text-rose-300"}`}>{msg.text}</p>}
-      <Link href="/trade" className="mt-3 block text-center text-[12px] text-mint underline underline-offset-2 hover:text-white">Trade on testnet with real quotes →</Link>
+      <Link href="/trade" className="mt-3 block text-center text-[12px] text-mint underline underline-offset-2 hover:text-white">Trade on {NETWORK} with real quotes →</Link>
     </div>
   );
 }
