@@ -151,3 +151,25 @@ describe("curve preview reproduces the PRD worked example (§7.8)", () => {
     expect(pts[pts.length - 1]![1]).toBeCloseTo(100, 6);
   });
 });
+
+import { DESTINATIONS, filterTokens, summarizeFundQuote } from "../lib/intents";
+
+describe("intents funding helpers", () => {
+  const tokens = [
+    { assetId: "a", symbol: "USDC", blockchain: "near", decimals: 6 },
+    { assetId: "b", symbol: "USDC", blockchain: "eth", decimals: 6 },
+    { assetId: "c", symbol: "SOL", blockchain: "sol", decimals: 9 },
+  ];
+  it("filters by symbol or chain and puts NEAR-native assets last", () => {
+    expect(filterTokens(tokens, "usdc").map((t) => t.blockchain)).toEqual(["eth", "near"]);
+    expect(filterTokens(tokens, "sol")).toHaveLength(1);
+    expect(filterTokens(tokens, "", 2)).toHaveLength(2);
+  });
+  it("summarises a quote, or returns null when fields are missing", () => {
+    expect(summarizeFundQuote({ quote: { amountInFormatted: "10", amountOutFormatted: "4.1", timeEstimate: 120 } }, "USDC", "wNEAR")).toBe("Pay 10 USDC, receive about 4.1 wNEAR in about 2 min.");
+    expect(summarizeFundQuote({}, "USDC", "wNEAR")).toBeNull();
+  });
+  it("offers wNEAR and USDC on NEAR", () => {
+    expect(DESTINATIONS.map((d) => d.assetId)).toContain("nep141:wrap.near");
+  });
+});

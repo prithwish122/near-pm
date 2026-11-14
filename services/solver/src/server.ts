@@ -2,6 +2,7 @@ import { CurveError } from "@ebbflow/curve-math";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { z } from "zod";
+import { OneClick, OneClickError } from "./intents/oneclick.js";
 import { RpcError } from "./chain.js";
 import { curves, summary } from "./curves.js";
 import { RouteError } from "./router.js";
@@ -36,11 +37,14 @@ async function body<T>(c: Context, schema: z.ZodType<T, z.ZodTypeDef, unknown>):
   return r.data;
 }
 
-export function createApp(source: BookSource) {
+export function createApp(source: BookSource, oneClick: OneClick = new OneClick(process.env.INTENTS_API_KEY)) {
   const app = new Hono();
   app.use("*", cors());
 
   app.onError((err, c) => {
+    if (err instanceof OneClickError) {
+      return c.json({ error: "INTENTS_ERROR", message: err.message }, err.status === 503 ? 503 : 502);
+    }
     if (err instanceof HttpError) {
       return c.json({ error: err.code, message: err.message, ...err.extra }, err.status);
     }
@@ -91,6 +95,41 @@ export function createApp(source: BookSource) {
   app.post("/simulate", async (c) => {
     const r = await body(c, SimulateRequest);
     return c.json(await source.simulateSwap(r.msg, r.amount));
+  });
+
+  // NEAR Intents (1Click): fund an Ebbflow trade from any chain. Mainnet only; the API key stays here.
+  app.get("/intents/tokens", async (c) => c.json({ enabled: oneClick.canQuote, tokens: await oneClick.getTokens() }));
+
+  app.post("/intents/swap-quote", async (c) => {
+    const r = await body(
+      c,
+      z.object({
+        origin_asset: z.string().min(3),
+        destination_asset: z.string().min(3),
+        amount: rawAmount,
+        recipient: account,
+        refund_to: z.string().min(3),
+        slippage_bps: z.number().int().min(1).max(500).default(100),
+        dry: z.boolean().default(true),
+      }),
+    );
+    return c.json(
+      await oneClick.quote({
+        originAsset: r.origin_asset,
+        destinationAsset: r.destination_asset,
+        amount: r.amount,
+        recipient: r.recipient,
+        refundTo: r.refund_to,
+        slippageBps: r.slippage_bps,
+        dry: r.dry,
+      }),
+    );
+  });
+
+  app.get("/intents/status", async (c) => {
+    const addr = c.req.query("deposit_address");
+    if (!addr) throw new HttpError(400, "INVALID_REQUEST", "deposit_address is required");
+    return c.json(await oneClick.status(addr));
   });
 
   return app;

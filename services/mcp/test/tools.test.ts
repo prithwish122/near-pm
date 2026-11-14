@@ -4,6 +4,7 @@ import type { BookSource, Market, PositionView, SimulateView, SwapMsg } from "@e
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { beforeEach, describe, expect, it } from "vitest";
+import { OneClick } from "@ebbflow/solver";
 import { Budget } from "../src/budget.js";
 import { createServer } from "../src/server.js";
 import { EbbflowTools, type Chain } from "../src/tools.js";
@@ -208,11 +209,21 @@ describe("MCP protocol", () => {
     return client;
   }
 
-  it("exposes the seven agent tools", async () => {
+  it("exposes the nine agent tools", async () => {
     const client = await connect();
     const { tools: list } = await client.listTools();
     expect(list.map((t) => t.name).sort()).toEqual(
-      ["compare_liquidity", "execute_swap", "get_agent_balance", "get_liquidity", "get_quote", "list_markets", "simulate_route"].sort(),
+      [
+        "compare_liquidity",
+        "execute_swap",
+        "get_agent_balance",
+        "get_liquidity",
+        "get_quote",
+        "intents_fund_quote",
+        "intents_tokens",
+        "list_markets",
+        "simulate_route",
+      ].sort(),
     );
     expect(list.find((t) => t.name === "execute_swap")!.annotations?.destructiveHint).toBe(true);
   });
@@ -230,5 +241,45 @@ describe("MCP protocol", () => {
     const r = await client.callTool({ name: "get_quote", arguments: { side: "buy_base", base_amount: "999" } });
     expect(r.isError).toBe(true);
     expect((r.content as { text: string }[])[0]!.text).toMatch(/INSUFFICIENT_LIQUIDITY/);
+  });
+});
+
+describe("NEAR Intents tools", () => {
+  const calls: { url: string; body?: string }[] = [];
+  const fake = (async (url: string, init?: RequestInit) => {
+    calls.push({ url, body: init?.body as string | undefined });
+    if (url.endsWith("/v0/tokens")) {
+      return new Response(
+        JSON.stringify([
+          { assetId: "nep141:wrap.near", symbol: "wNEAR", blockchain: "near", decimals: 24 },
+          { assetId: "nep141:eth-usdc.omft.near", symbol: "USDC", blockchain: "eth", decimals: 6 },
+        ]),
+      );
+    }
+    return new Response(JSON.stringify({ quote: { amountOut: "1", depositAddress: undefined } }));
+  }) as unknown as typeof fetch;
+  const withIntents = () =>
+    new EbbflowTools({
+      source,
+      chain,
+      wallet,
+      budget: new Budget(limits),
+      config: { explorerTxUrl: "", limits },
+      oneClick: new OneClick("k", "https://oc.test", fake),
+    });
+
+  it("filters tokens", async () => {
+    const r = await withIntents().intentsTokens({ query: "eth" });
+    expect(r.tokens.map((t) => t.symbol)).toEqual(["USDC"]);
+  });
+
+  it("requests a dry quote delivered to the agent account", async () => {
+    await withIntents().intentsFundQuote({ origin_asset: "nep141:eth-usdc.omft.near", destination_asset: "nep141:wrap.near", amount: "1000000", refund_to: "0xabc" });
+    const sent = JSON.parse(calls.find((c) => c.url.endsWith("/v0/quote"))!.body!);
+    expect(sent).toMatchObject({ dry: true, recipient: wallet.accountId, refundTo: "0xabc", swapType: "EXACT_INPUT" });
+  });
+
+  it("explains when Intents is not configured", async () => {
+    await expect(tools.intentsTokens({})).rejects.toThrow(/not configured/);
   });
 });

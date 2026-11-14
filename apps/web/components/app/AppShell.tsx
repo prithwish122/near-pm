@@ -10,7 +10,7 @@ import { cx } from "./ui";
 import TxBanner from "./TxBanner";
 import { useWallet } from "./WalletProvider";
 
-const NAV = [["Trade", "/trade"], ["Make", "/make"], ["Portfolio", "/portfolio"], ["Activity", "/activity"], ["Faucet", "/faucet"]] as const;
+const NAV = [["Trade", "/trade"], ["Make", "/make"], ["Portfolio", "/portfolio"], ["Activity", "/activity"], ["Faucet", "/faucet"], ["Fund", "/fund"]] as const;
 
 function WalletButton() {
   const { ready, accountId, connect, disconnect } = useWallet();

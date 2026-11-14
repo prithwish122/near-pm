@@ -7,6 +7,7 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "solver": "pnpm --filter @ebbflow/solver dev",
+    "intents": "pnpm --filter @ebbflow/solver intents",
     "web": "pnpm --filter @ebbflow/web dev"
   },
   "devDependencies": {
