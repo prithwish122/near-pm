@@ -40,5 +40,7 @@ export const swapTx = (q: Quote["tx"]): TxSpec => tx(q.receiver_id, q.method_nam
 
 export const mintTx = (token: string, amount: bigint) => tx(token, "mint", { amount: amount.toString() }, GAS.simple, "0");
 export const wrapNearTx = (wnear: string, yocto: bigint) => tx(wnear, "near_deposit", {}, GAS.simple, yocto.toString());
+/** Unwraps wNEAR back to native NEAR (wrap.testnet `near_withdraw`, needs exactly 1 yoctoNEAR). */
+export const unwrapNearTx = (wnear: string, yocto: bigint) => tx(wnear, "near_withdraw", { amount: yocto.toString() }, GAS.simple, "1");
 export const storageDepositTx = (contract: string, accountId: string, deposit: bigint) =>
   tx(contract, "storage_deposit", { account_id: accountId, registration_only: true }, GAS.simple, deposit.toString());

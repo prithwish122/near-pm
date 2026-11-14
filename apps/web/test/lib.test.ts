@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { MARKET } from "../lib/config";
 import { fmtUnits, parseAmount, shortAccount, timeAgo } from "../lib/format";
 import { parseSide, previewSide, type SideForm } from "../lib/curvePreview";
-import { closePositionTx, createPositionTx, depositTx, mintTx, swapTx, withdrawTx } from "../lib/tx";
-import { describeOutcome, hasFailure, parseEvents } from "../lib/txResult";
+import { closePositionTx, createPositionTx, depositTx, mintTx, swapTx, unwrapNearTx, withdrawTx } from "../lib/tx";
+import { describeOutcome, failureReason, hasFailure, parseEvents } from "../lib/txResult";
 
 const book = "book.t.testnet";
 const ev = (event: string, data: object) => `EVENT_JSON:${JSON.stringify({ standard: "ebbflow", version: "1.0.0", event, data: [data] })}`;
@@ -58,6 +58,43 @@ describe("outcome parsing", () => {
     expect(hasFailure(outcome([], { Failure: {} }))).toBe(true);
     expect(hasFailure({ status: {}, receipts_outcome: [{ outcome: { logs: [], status: { Failure: {} } } }] })).toBe(true);
     expect(describeOutcome(outcome([], { Failure: {} }), MARKET).tone).toBe("error");
+  });
+  it("titles rejected swaps by reason and skips re-quote when paused", () => {
+    const paused = describeOutcome(outcome([ev("swap_rejected", { reason: "E13_PAUSED", amount_refunded: "1" })]), MARKET);
+    expect(paused.title).toBe("Refunded: trading is paused");
+    expect(paused.requote).toBe(false);
+    const slip = describeOutcome(outcome([ev("swap_rejected", { reason: "E09_MIN_OUT_NOT_MET", amount_refunded: "1" })]), MARKET);
+    expect(slip.title).toMatch(/slippage/);
+  });
+  it("says when swap output was credited inside the book", () => {
+    const d = describeOutcome(
+      outcome([
+        ev("swap", { side: "buy_base", amount_in: "5040000", amount_out: "1000000000000000000000000", refund: "0", legs: [{}] }),
+        ev("payout_credited", { account_id: "bob.testnet", token_id: MARKET.base, amount: "1000000000000000000000000" }),
+      ]),
+      MARKET,
+    );
+    expect(d.tone).toBe("warn");
+    expect(d.lines[0]).toMatch(/credited to your book balance/);
+    expect(d.lines.join("|")).toMatch(/withdraw it from Portfolio/);
+  });
+  it("extracts the contract panic reason from a failed receipt", () => {
+    const failure = { Failure: { ActionError: { index: 0, kind: { FunctionCallError: { ExecutionError: "Smart contract panicked: E10_INSUFFICIENT_BALANCE" } } } } };
+    const o = { status: failure, receipts_outcome: [{ outcome: { logs: [], status: failure } }] };
+    expect(failureReason(o)).toBe("E10_INSUFFICIENT_BALANCE");
+    const d = describeOutcome(o, MARKET);
+    expect(d.tone).toBe("error");
+    expect(d.lines[0]).toMatch(/book balance is too low/);
+  });
+  it("reports a withdrawal restored after a failed transfer", () => {
+    const d = describeOutcome(outcome([ev("withdraw", { account_id: "a.testnet", token_id: MARKET.base, amount: "1" }), "withdraw failed; 1 restored to a.testnet"]), MARKET);
+    expect(d.tone).toBe("warn");
+    expect(d.title).toMatch(/returned to your book balance/);
+  });
+  it("builds an unwrap with 1 yocto", () => {
+    const t = unwrapNearTx("wrap.testnet", 5n);
+    expect(t.receiverId).toBe("wrap.testnet");
+    expect(t.calls[0]).toMatchObject({ method: "near_withdraw", args: { amount: "5" }, deposit: "1" });
   });
   it("describes created and closed positions", () => {
     expect(describeOutcome(outcome([ev("position_created", { position_id: "9" })]), MARKET).title).toBe("Position #9 published");
