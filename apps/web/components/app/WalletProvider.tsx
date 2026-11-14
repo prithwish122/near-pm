@@ -6,7 +6,7 @@ import type { WalletSelectorModal } from "@near-wallet-selector/modal-ui";
 import { BOOK, NETWORK } from "@/lib/config";
 import type { TxOutcome } from "@/lib/rpc";
 import type { TxSpec } from "@/lib/tx";
-import { sendWithTestKey, TEST_ACCOUNT } from "@/lib/testWallet";
+import { activeTestAccount, HAS_TEST_WALLET, sendWithTestKey } from "@/lib/testWallet";
 
 interface Ctx {
   ready: boolean;
@@ -41,13 +41,13 @@ export default function WalletProvider({ children }: { children: ReactNode }) {
   const actionsRef = useRef<typeof import("@near-wallet-selector/core").actionCreators | null>(null);
 
   useEffect(() => {
-    if (!TEST_ACCOUNT) return;
-    setAccountId(TEST_ACCOUNT);
+    if (!HAS_TEST_WALLET) return;
+    setAccountId(activeTestAccount());
     setReady(true);
   }, []);
 
   useEffect(() => {
-    if (TEST_ACCOUNT) return; // dev test key: no browser wallet needed
+    if (HAS_TEST_WALLET) return; // dev test key: no browser wallet needed
     let sub: { unsubscribe(): void } | undefined;
     let cancelled = false;
     (async () => {
@@ -79,14 +79,14 @@ export default function WalletProvider({ children }: { children: ReactNode }) {
 
   const connect = useCallback(() => modalRef.current?.show(), []);
   const disconnect = useCallback(async () => {
-    if (TEST_ACCOUNT) return;
+    if (HAS_TEST_WALLET) return;
     const w = await selectorRef.current?.wallet();
     await w?.signOut();
     setAccountId(null);
   }, []);
 
   const send = useCallback(async (txs: TxSpec[]) => {
-    if (TEST_ACCOUNT) {
+    if (HAS_TEST_WALLET) {
       const list = await sendWithTestKey(txs);
       setOutcomes(list);
       return list;
