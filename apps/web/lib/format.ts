@@ -18,6 +18,15 @@ export function parseAmount(input: string, decimals: number): bigint | null {
   }
 }
 
+/** Why `input` can't be used as an amount, or null when it is empty or valid. */
+export function amountProblem(input: string, decimals: number): string | null {
+  const v = input.trim();
+  if (!v) return null;
+  if (!/^\d+(\.\d+)?$/.test(v)) return "Enter a valid number.";
+  if ((v.split(".")[1]?.length ?? 0) > decimals) return `Too many decimals (max ${decimals}).`;
+  return /^0+(\.0*)?$/.test(v) ? "Amount must be greater than 0." : null;
+}
+
 /** Keeps the start and the distinguishing tail, e.g. `ebbflo…-priya.testnet`. */
 export const shortAccount = (id: string, max = 22) => (id.length <= max ? id : `${id.slice(0, 6)}…${id.slice(-14)}`);
 

@@ -206,3 +206,16 @@ describe("network switch", () => {
     await expect(load("mainnet")).rejects.toThrow(/deploy-mainnet/);
   });
 });
+
+import { amountProblem } from "../lib/format";
+describe("amountProblem", () => {
+  it("explains why an amount is unusable", () => {
+    expect(amountProblem("", 24)).toBeNull();
+    expect(amountProblem("1.5", 24)).toBeNull();
+    expect(amountProblem("abc", 24)).toBe("Enter a valid number.");
+    expect(amountProblem("0", 24)).toBe("Amount must be greater than 0.");
+    expect(amountProblem("0.000", 6)).toBe("Amount must be greater than 0.");
+    expect(amountProblem("1.0000000000000000000000001", 24)).toBe("Too many decimals (max 24).");
+    expect(amountProblem("1.1234567", 6)).toBe("Too many decimals (max 6).");
+  });
+});

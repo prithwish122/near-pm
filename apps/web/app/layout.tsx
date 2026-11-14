@@ -6,7 +6,7 @@ import Providers from "@/components/Providers";
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta", weight: ["300", "400", "500", "600", "700"] });
 
 export const metadata: Metadata = {
-  title: "Ebbflow — Curve-shaped liquidity on NEAR",
+  title: { default: "Ebbflow — Curve-shaped liquidity on NEAR", template: "%s · Ebbflow" },
   description: "On Ebbflow an order is a curve, not a price. Atomic multi-maker fills and self-refilling liquidity on NEAR, open to AI agents.",
 };
 

@@ -20,7 +20,7 @@ function SideForm({ kind, f, set, errors, unit, amountSym, priceSym }: { kind: "
   return (
     <Card title={<span className={ask ? "text-mint" : "text-sky-300"}>{ask ? `Ask: sell ${amountSym}` : `Bid: buy ${unit}`}</span>}
       aside={<label className="flex cursor-pointer items-center gap-2 text-[12px] text-white/70"><input type="checkbox" checked={f.on} onChange={(e) => set({ on: e.target.checked })} className="h-4 w-4 accent-[#55ffb0]" />Enabled</label>}>
-      <div className={cx("space-y-4", !f.on && "pointer-events-none opacity-40")} aria-disabled={!f.on}>
+      <div className={cx("space-y-4", !f.on && "pointer-events-none opacity-40")} aria-disabled={!f.on} {...(!f.on ? ({ inert: "" } as object) : {})}>
         <Field label={ask ? "Inventory" : "Inventory"} value={f.amount} onChange={(e) => set({ amount: e.target.value.replace(/[^0-9.]/g, "") })} suffix={amountSym} error={f.on ? errors.amount : null} id={`${kind}-amount`} />
         <div className="grid grid-cols-2 gap-3">
           <Field label="Start price" value={f.start} onChange={(e) => set({ start: e.target.value.replace(/[^0-9.]/g, "") })} suffix={priceSym} error={f.on ? errors.start : null} id={`${kind}-start`} />

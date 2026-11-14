@@ -8,7 +8,7 @@ import { Btn, Card, Field, Notice, PageHead, Seg, Skeleton, Stat } from "@/compo
 import { useWallet } from "@/components/app/WalletProvider";
 import { ApiError, getCurves, getMarkets, postQuote, type Quote } from "@/lib/api";
 import { MARKETS } from "@/lib/config";
-import { fmtUnits, parseAmount, shortAccount } from "@/lib/format";
+import { amountProblem, fmtUnits, parseAmount, shortAccount } from "@/lib/format";
 import { checkRegistration, registrationTxs } from "@/lib/registration";
 import { ftBalance } from "@/lib/rpc";
 import { swapTx } from "@/lib/tx";
@@ -51,6 +51,7 @@ export default function TradePage() {
   }, []);
 
   // Debounced quote (300 ms).
+  const amountIssue = amountProblem(amount, mode === "base" ? m.base_decimals : m.quote_decimals);
   useEffect(() => {
     setQuote(null);
     setQErr(null);
@@ -198,7 +199,8 @@ export default function TradePage() {
                 <p className="text-[12px] text-amber-200">Not enough liquidity. {qErr.availableRaw ? `Max available: ${fmtUnits(qErr.availableRaw, m.base_decimals, 4)} ${m.baseSymbol}.` : ""}</p>
               ) : qErr.code === "SOLVER_UNREACHABLE" ? <p className="text-[12px] text-white/55">Quote unavailable.</p>
               : <p className="text-[12px] text-rose-300">{qErr.message}</p>
-            ) : <p className="text-[12px] text-white/50">Enter an amount to see the route.</p>}
+            ) : amountIssue ? <p role="alert" className="text-[12px] text-rose-300">{amountIssue}</p>
+            : <p className="text-[12px] text-white/50">Enter an amount to see the route.</p>}
           </div>
 
           {needsReg && (
