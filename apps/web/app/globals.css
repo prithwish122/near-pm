@@ -1,45 +1,109 @@
+@import url("https://fonts.googleapis.com/css2?family=Funnel+Display:wght@400;500;600&family=Funnel+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root { color-scheme: dark; }
-html { scroll-behavior: smooth; }
-body { background: #07110a; color: #f7fffa; font-family: var(--font-jakarta), Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+html { scroll-behavior: smooth; scrollbar-gutter: stable; }
+body { background: #07110a; color: #f7fffa; font-family: "Funnel Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 
 @layer components {
   .wrap { @apply mx-auto w-full max-w-wrap px-5 sm:px-8 lg:px-12; }
   .pill { @apply inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium tracking-wide; }
-  .glass { background: linear-gradient(160deg, rgba(40,120,80,.38), rgba(14,40,25,.55)); border: 1px solid rgba(140,255,189,.16); backdrop-filter: blur(14px); }
-  .card-hover { transition: transform .35s ease, border-color .35s ease, background .35s ease, box-shadow .35s ease; }
-  .card-hover:hover { transform: translateY(-4px); border-color: rgba(125,255,183,.5); box-shadow: 0 18px 50px -20px rgba(70,255,156,.55); }
+  /* Landing grid: same width as the hairline rails. */
+  .frame { @apply mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12; }
 }
 
-/* Hero: black -> violet glow -> near-white */
+/* ---------- Landing ----------
+   The original green: near-black with a green cast, glowing into mint. Light lives in the hero card,
+   the satin waves and the closing band; the sections between stay dark so the glow reads. */
+.landing { background: #07110a; }
+/* Hero card: black -> green -> a pale mint (softer than white) */
 .hero-bg {
   background:
-    radial-gradient(ellipse 70% 30% at 22% 72%, rgba(30,190,110,.7) 0%, rgba(30,190,110,0) 70%),
-    radial-gradient(ellipse 60% 24% at 70% 74%, rgba(45,205,125,.55) 0%, rgba(45,205,125,0) 70%),
-    linear-gradient(180deg, #060f09 0%, #08180e 42%, #0f3d25 58%, #138a50 68%, #3fd68c 77%, #bff5da 84%, #f4fffa 89%, #fff 93%);
+    radial-gradient(ellipse 70% 30% at 22% 72%, rgba(30,190,110,.5) 0%, rgba(30,190,110,0) 70%),
+    radial-gradient(ellipse 60% 24% at 70% 74%, rgba(45,205,125,.4) 0%, rgba(45,205,125,0) 70%),
+    linear-gradient(180deg, #060f09 0%, #08180e 40%, #0f3d25 56%, #138a50 67%, #3aa874 77%, #84cfa9 86%, #b3e0c9 92%, #c4e6d3 97%);
 }
-/* Opportunity: white -> lavender -> deep violet -> black */
-.opp-bg {
-  background:
-    radial-gradient(ellipse 55% 22% at 50% 42%, rgba(95,255,170,.5) 0%, rgba(95,255,170,0) 70%),
-    linear-gradient(180deg, #fff 0%, #f3fff9 22%, #bfffdd 34%, #4cf097 43%, #167041 53%, #092013 64%, #07110a 76%);
-}
+/* Closing band: black -> green -> mint, running into the mint footer */
 .news-bg {
   background:
-    radial-gradient(ellipse 60% 34% at 50% 78%, rgba(85,255,163,.9) 0%, rgba(85,255,163,0) 70%),
-    linear-gradient(180deg, #07110a 0%, #08190f 40%, #10482b 62%, #3ad882 78%, #a4ffce 90%, #fff 100%);
-}
-.member-glow {
-  background:
-    radial-gradient(ellipse 90% 45% at 50% 100%, rgba(162,255,208,.95) 0%, rgba(85,255,176,.85) 30%, rgba(45,190,116,.45) 60%, rgba(0,0,0,0) 80%),
-    linear-gradient(180deg, #0a1c12 0%, #0d331d 55%, #12522d 100%);
+    radial-gradient(ellipse 60% 34% at 50% 80%, rgba(85,255,163,.42) 0%, rgba(85,255,163,0) 70%),
+    linear-gradient(180deg, #07110a 0%, #08190f 38%, #10482b 60%, #2f9e66 77%, #84cfa9 90%, #c4e6d3 100%);
 }
 @keyframes drift { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(2%,-1.5%,0) scale(1.05); } }
 .drift { animation: drift 14s ease-in-out infinite; }
-@keyframes ping-slow { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(3); opacity: 0; } }
-.ping-slow { transform-origin: center; transform-box: fill-box; animation: ping-slow 2.6s ease-out infinite; }
-@media (prefers-reduced-motion: reduce) { .drift, .ping-slow { animation: none; } html { scroll-behavior: auto; } }
+/* The coin that stands in for the "o" of "order" (see CoinO). Sized to the letter, with a slow turn. */
+.coin-o { display: inline-block; width: .7em; height: .7em; margin: 0 .04em 0 .02em; vertical-align: -.05em; perspective: 4em; }
+/* Stays on the line: a gentle sway, then a full flip, then settles. No vertical movement. */
+.coin-o > svg { animation: coin-turn 6s cubic-bezier(.45,0,.25,1) infinite; transform-origin: 50% 50%; filter: drop-shadow(0 0 .12em rgba(53,220,144,.45)); }
+@keyframes coin-turn {
+  0%   { transform: rotateY(-22deg); }
+  22%  { transform: rotateY(22deg); }
+  44%  { transform: rotateY(-22deg); }
+  58%  { transform: rotateY(-22deg); }
+  80%  { transform: rotateY(338deg); }
+  100% { transform: rotateY(338deg); }
+}
+/* hover: an extra quick flip */
+.coin-o:hover > svg { animation: coin-spin .9s cubic-bezier(.3,0,.2,1) 1, coin-turn 6s cubic-bezier(.45,0,.25,1) .9s infinite; }
+@keyframes coin-spin { from { transform: rotateY(-22deg); } to { transform: rotateY(698deg); } }
+/* How it works panels: dark frosted green glass */
+.panel-acc {
+  /* lifted off the page: a lighter glass fill, a visible edge and a lit top lip */
+  background: linear-gradient(180deg, rgba(255,255,255,.085) 0%, rgba(255,255,255,.03) 55%, rgba(255,255,255,.05) 100%), #0d2216;
+  border: 1px solid rgba(255,255,255,.13);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 24px 50px -28px rgba(0,0,0,.9);
+}
+.panel-acc-on {
+  border-color: rgba(162,255,208,.45);
+  box-shadow: inset 0 1px 0 rgba(226,255,240,.25), 0 0 0 1px rgba(162,255,208,.12), 0 30px 90px -30px rgba(53,220,144,.55);
+}
+/* Canvas wave melts into the page at the sides and top. */
+.wave-fade-top { -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent), linear-gradient(to bottom, transparent, #000 35%); -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent), linear-gradient(to bottom, transparent, #000 35%); mask-composite: intersect; }
+/* Lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .coin-o > svg, .drift { animation: none; } html { scroll-behavior: auto; } }
 
+/* ---------- App (trading desk) ----------
+   Neutral grey-black surfaces; colour only on numbers and the one main button. No glows. */
+.app-bg { background: #0a0a0b; }
+.panel { background: #111113; border: 1px solid rgba(255,255,255,.06); }
+.num { font-family: var(--font-mono), ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: .92em; letter-spacing: -0.02em; }
+h1, h2, h3 { font-family: "Funnel Display", "Funnel Sans", system-ui, sans-serif; }
+.label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.4); }
+@keyframes flash-up { from { background: rgba(92,207,148,.16); } to { background: transparent; } }
+@keyframes flash-down { from { background: rgba(232,104,126,.16); } to { background: transparent; } }
+.flash-up { animation: flash-up .9s ease-out; }
+.flash-down { animation: flash-down .9s ease-out; }
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+.shimmer { position: relative; overflow: hidden; background: rgba(255,255,255,.04); }
+.shimmer::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent); animation: shimmer 1.4s infinite; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+.rise { animation: rise .45s cubic-bezier(.22,1,.36,1) both; }
+@keyframes grow { from { transform: scaleY(0); } }
+.grow { transform-origin: bottom; transform-box: fill-box; animation: grow .8s cubic-bezier(.22,1,.36,1) both; }
+@keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(92,207,148,.45); } 100% { box-shadow: 0 0 0 6px rgba(92,207,148,0); } }
+.live-dot { width: 6px; height: 6px; border-radius: 99px; background: #5ccf94; animation: pulse-dot 2s ease-out infinite; }
+.scroll-thin { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.12) transparent; }
+@media (prefers-reduced-motion: reduce) { .flash-up, .flash-down, .shimmer::after, .rise, .grow, .live-dot { animation: none; } }
+
+/* Keyboard focus: one clear ring everywhere, mint on dark, dark on the mint footer. */
+a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid #a2ffd0; outline-offset: 3px; border-radius: 10px;
+}
+footer a:focus-visible, footer button:focus-visible { outline-color: #13231b; }
+
+/* How it works: charts sweep in left to right when their card opens */
+@keyframes mech-reveal { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.mech-reveal { transform-origin: 0 0; transform-box: view-box; animation: mech-reveal 1.2s cubic-bezier(.22,1,.36,1) both; }
+@media (prefers-reduced-motion: reduce) { .mech-reveal { animation: none; } }
+
+/* Numbers band: the card's outline and its numeral are one line (see OutlineCard). */
+.outline-line { stroke: rgba(226,255,240,.42); transition: stroke .5s ease; }
+/* filled with the card's own black, so the numeral reads as part of the card rising out of it */
+.outline-num { fill: #030604; font-size: 168px; font-weight: 500; letter-spacing: -0.06em; font-family: "Funnel Display", "Funnel Sans", system-ui, sans-serif; }
+.outline-card:hover .outline-line { stroke: #a2ffd0; }
+@media (max-width: 639px) { .outline-num { font-size: 140px; } }
