@@ -107,3 +107,14 @@ footer a:focus-visible, footer button:focus-visible { outline-color: #13231b; }
 .outline-num { fill: #030604; font-size: 168px; font-weight: 500; letter-spacing: -0.06em; font-family: "Funnel Display", "Funnel Sans", system-ui, sans-serif; }
 .outline-card:hover .outline-line { stroke: #a2ffd0; }
 @media (max-width: 639px) { .outline-num { font-size: 140px; } }
+
+/* Roadmap: a light pulse runs along the shipped part of the line; the step in progress has a pulsing ring. */
+.roadmap-done::after {
+  content: ""; position: absolute; inset: 0; width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent);
+  animation: roadmap-run 2.6s ease-in-out infinite;
+}
+@keyframes roadmap-run { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+.roadmap-ping { animation: roadmap-ping 2.2s cubic-bezier(0,0,.2,1) infinite; }
+@keyframes roadmap-ping { 0% { transform: scale(1); opacity: .9; } 80%, 100% { transform: scale(1.7); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .roadmap-done::after, .roadmap-ping { animation: none; } }
